@@ -30,6 +30,29 @@
         <p id="message">タップで浮きを投げよう</p>
         <button id="actionButton" type="button">投げる</button>
       </section>
+
+      <nav class="menu-bar" aria-label="メニュー">
+        <button id="playTab" class="tab-button is-active" type="button">釣る</button>
+        <button id="dexTab" class="tab-button" type="button">図鑑</button>
+      </nav>
+
+      <section id="menuScreen" class="screen" aria-label="メニュー画面">
+        <div class="menu-panel">
+          <h1>Tap Fishing</h1>
+          <button id="startButton" class="primary-button" type="button">釣りを始める</button>
+          <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
+        </div>
+      </section>
+
+      <section id="dexScreen" class="screen is-hidden" aria-label="図鑑">
+        <div class="dex-panel">
+          <header class="dex-header">
+            <h2>図鑑</h2>
+            <button id="closeDexButton" type="button">戻る</button>
+          </header>
+          <div id="dexList" class="dex-list"></div>
+        </div>
+      </section>
     </main>
 
     <script src="game.js"></script>

@@ -6,8 +6,17 @@ const messageEl = document.querySelector("#message");
 const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
+const playTab = document.querySelector("#playTab");
+const dexTab = document.querySelector("#dexTab");
+const menuScreen = document.querySelector("#menuScreen");
+const dexScreen = document.querySelector("#dexScreen");
+const startButton = document.querySelector("#startButton");
+const menuDexButton = document.querySelector("#menuDexButton");
+const closeDexButton = document.querySelector("#closeDexButton");
+const dexList = document.querySelector("#dexList");
 
-const GAME_VERSION = "v0.4.1";
+const GAME_VERSION = "v0.5.0";
+const COLLECTION_KEY = "tapFishingCollection";
 
 const fishTypes = [
   {
@@ -58,6 +67,7 @@ const state = {
   rodX: 0,
   bobber: { x: 0, y: 0, baseY: 0, visible: false, sunk: false },
   phase: "idle",
+  view: "menu",
   score: 0,
   caughtCount: 0,
   running: true,
@@ -69,7 +79,32 @@ const state = {
   biteTimer: 0,
   showcaseTimer: 0,
   ripples: [],
+  collection: loadCollection(),
 };
+
+function loadCollection() {
+  try {
+    return JSON.parse(localStorage.getItem(COLLECTION_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCollection() {
+  localStorage.setItem(COLLECTION_KEY, JSON.stringify(state.collection));
+}
+
+function showView(view) {
+  state.view = view;
+  menuScreen.classList.toggle("is-hidden", view !== "menu");
+  dexScreen.classList.toggle("is-hidden", view !== "dex");
+  playTab.classList.toggle("is-active", view === "game");
+  dexTab.classList.toggle("is-active", view === "dex");
+
+  if (view === "dex") {
+    renderDex();
+  }
+}
 
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
@@ -160,6 +195,42 @@ function updateHud() {
   versionEl.textContent = GAME_VERSION;
 }
 
+function renderDex() {
+  dexList.replaceChildren(
+    ...fishTypes.map((type) => {
+      const count = state.collection[type.name] || 0;
+      const card = document.createElement("article");
+      card.className = `dex-card${count ? "" : " is-locked"}`;
+
+      const art = document.createElement("div");
+      art.className = "dex-art";
+
+      if (count && type.image) {
+        const image = document.createElement("img");
+        image.src = type.image;
+        image.alt = type.name;
+        art.append(image);
+      } else {
+        const shadow = document.createElement("span");
+        shadow.className = "dex-shadow";
+        shadow.style.width = `${Math.min(82, Math.max(46, type.shadow))}%`;
+        art.append(shadow);
+      }
+
+      const name = document.createElement("div");
+      name.className = "dex-name";
+      name.textContent = count ? type.name : "???";
+
+      const meta = document.createElement("div");
+      meta.className = "dex-meta";
+      meta.textContent = count ? `${count}匹 / ${type.points}pt` : "未発見";
+
+      card.append(art, name, meta);
+      return card;
+    })
+  );
+}
+
 function setMessage(text, buttonText) {
   messageEl.textContent = text;
   actionButton.textContent = buttonText;
@@ -167,6 +238,10 @@ function setMessage(text, buttonText) {
 
 function handleTap(event) {
   event.preventDefault();
+  if (state.view !== "game") {
+    return;
+  }
+
   if (!state.running) {
     resetGame();
     return;
@@ -209,6 +284,8 @@ function catchFish() {
   const fish = state.targetFish;
   state.score += fish.type.points;
   state.caughtCount += 1;
+  state.collection[fish.type.name] = (state.collection[fish.type.name] || 0) + 1;
+  saveCollection();
   state.phase = "showcase";
   state.showcaseTimer = 1.8;
   state.showcaseFish = fish.type;
@@ -571,7 +648,13 @@ window.addEventListener("resize", resizeCanvas);
 canvas.addEventListener("pointerdown", handleTap);
 actionButton.addEventListener("pointerdown", handleTap);
 resetButton.addEventListener("click", resetGame);
+playTab.addEventListener("click", () => showView("game"));
+dexTab.addEventListener("click", () => showView("dex"));
+startButton.addEventListener("click", () => showView("game"));
+menuDexButton.addEventListener("click", () => showView("dex"));
+closeDexButton.addEventListener("click", () => showView("game"));
 
 resizeCanvas();
 resetGame();
+showView("menu");
 requestAnimationFrame(loop);
