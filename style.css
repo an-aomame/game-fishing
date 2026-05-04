@@ -672,6 +672,34 @@ button {
   font-weight: 800;
 }
 
+.dex-detail-facts {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dex-fact {
+  background: rgba(16, 32, 51, 0.05);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.dex-fact-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dex-fact strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .dex-detail-text {
   color: var(--ink);
   font-size: 15px;
@@ -816,6 +844,10 @@ button {
   .dex-detail-head h3 {
     font-size: 24px;
     padding-right: 74px;
+  }
+
+  .dex-detail-facts {
+    grid-template-columns: 1fr;
   }
 }
 

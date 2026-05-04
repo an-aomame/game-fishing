@@ -34,6 +34,8 @@ const dexDetailLead = document.querySelector("#dexDetailLead");
 const dexDetailRarity = document.querySelector("#dexDetailRarity");
 const dexDetailName = document.querySelector("#dexDetailName");
 const dexDetailMeta = document.querySelector("#dexDetailMeta");
+const dexDetailSpot = document.querySelector("#dexDetailSpot");
+const dexDetailTrend = document.querySelector("#dexDetailTrend");
 const dexDetailSizes = document.querySelector("#dexDetailSizes");
 const dexDetailText = document.querySelector("#dexDetailText");
 const shopList = document.querySelector("#shopList");
@@ -134,6 +136,7 @@ function closeDexDetail() {
 function openDexDetail(type) {
   const entry = getCollectionEntry(type.name);
   const discovered = entry.count > 0;
+  const recommendedSpot = fishingSpots.find((spot) => spot.id === type.recommendedSpot);
   dexDetailArt.replaceChildren();
 
   if (discovered && type.image) {
@@ -153,6 +156,8 @@ function openDexDetail(type) {
   dexDetailName.textContent = discovered ? type.name : "???";
   dexDetailMeta.textContent = discovered ? `${entry.count}匹 / ${type.points}pt` : "未発見";
   dexDetailLead.textContent = discovered ? `${type.name}のことなら、わしに聞くとよいぞい。` : "まだ姿が確認できておらんのう。";
+  dexDetailSpot.textContent = discovered ? recommendedSpot?.name || "不明" : "???";
+  dexDetailTrend.textContent = discovered ? type.sizeHint || "まだ傾向は調査中じゃ。" : "???";
   dexDetailText.textContent = discovered
     ? type.description || "まだ詳しい解説は準備中じゃ。"
     : "まずは実際に釣り上げてみるのじゃ。姿を確かめれば、図鑑の記録もぐっと深まるぞい。";
