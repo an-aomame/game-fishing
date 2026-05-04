@@ -21,6 +21,7 @@ const menuSpotButton = document.querySelector("#menuSpotButton");
 const menuReloadButton = document.querySelector("#menuReloadButton");
 const menuDexButton = document.querySelector("#menuDexButton");
 const menuShopButton = document.querySelector("#menuShopButton");
+const fullResetButton = document.querySelector("#fullResetButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const closeShopButton = document.querySelector("#closeShopButton");
 const closeSpotButton = document.querySelector("#closeSpotButton");
@@ -29,7 +30,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.0.0";
+const GAME_VERSION = "v1.1.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -62,6 +63,17 @@ const fishingSpots = [
     unlockRodLevel: 0,
     rarityMultiplier: { C: 1.2, R: 0.9, SR: 0.45 },
     bigBonus: 0,
+    theme: {
+      skyTop: "#86d8f0",
+      skyBottom: "#eef9f6",
+      waterTop: "#6ac0da",
+      waterMid: "#2493c5",
+      waterBottom: "#083a67",
+      sun: "#ffcb58",
+      cloud: "rgba(255,255,255,0.82)",
+      horizon: "rgba(255,255,255,0.32)",
+      detail: "pier",
+    },
   },
   {
     id: "reef",
@@ -70,6 +82,17 @@ const fishingSpots = [
     unlockRodLevel: 1,
     rarityMultiplier: { C: 0.82, R: 1.28, SR: 0.9 },
     bigBonus: 0.12,
+    theme: {
+      skyTop: "#7bcbea",
+      skyBottom: "#d9f1f6",
+      waterTop: "#46abc7",
+      waterMid: "#147d9d",
+      waterBottom: "#063b5d",
+      sun: "#ffd16c",
+      cloud: "rgba(240,250,255,0.76)",
+      horizon: "rgba(231,248,255,0.28)",
+      detail: "reef",
+    },
   },
   {
     id: "deep",
@@ -78,6 +101,17 @@ const fishingSpots = [
     unlockRodLevel: 2,
     rarityMultiplier: { C: 0.52, R: 1, SR: 1.62 },
     bigBonus: 0.28,
+    theme: {
+      skyTop: "#253b65",
+      skyBottom: "#486f8f",
+      waterTop: "#1d7895",
+      waterMid: "#0c4d75",
+      waterBottom: "#03192f",
+      sun: "#d8e2ff",
+      cloud: "rgba(191,211,229,0.5)",
+      horizon: "rgba(170,211,232,0.22)",
+      detail: "deep",
+    },
   },
 ];
 
@@ -249,6 +283,25 @@ function loadEconomy() {
 
 function saveEconomy() {
   localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel, spotId: state.spotId }));
+}
+
+function fullResetProgress() {
+  if (!window.confirm("所持金、竿、図鑑、ミッションをすべてリセットします。よろしいですか？")) {
+    return;
+  }
+
+  localStorage.removeItem(COLLECTION_KEY);
+  localStorage.removeItem(ECONOMY_KEY);
+  localStorage.removeItem(MISSION_KEY);
+  state.score = 0;
+  state.caughtCount = 0;
+  state.money = 0;
+  state.rodLevel = 0;
+  state.spotId = "pier";
+  state.collection = {};
+  state.missions = {};
+  resetGame();
+  showView("menu");
 }
 
 function reloadLatest() {
@@ -821,18 +874,19 @@ function draw() {
 }
 
 function drawSky() {
+  const theme = getCurrentSpot().theme;
   const gradient = ctx.createLinearGradient(0, 0, 0, state.waterLine);
-  gradient.addColorStop(0, "#86d8f0");
-  gradient.addColorStop(1, "#eef9f6");
+  gradient.addColorStop(0, theme.skyTop);
+  gradient.addColorStop(1, theme.skyBottom);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, state.width, state.waterLine);
 
-  ctx.fillStyle = "#ffcb58";
+  ctx.fillStyle = theme.sun;
   ctx.beginPath();
   ctx.arc(state.width - 74, 62, 34, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.fillStyle = theme.cloud;
   drawCloud(state.width * 0.18, 70, 1);
   drawCloud(state.width * 0.68, 104, 0.72);
 }
@@ -846,14 +900,16 @@ function drawCloud(x, y, scale) {
 }
 
 function drawWater() {
+  const theme = getCurrentSpot().theme;
   const gradient = ctx.createLinearGradient(0, state.waterLine, 0, state.height);
-  gradient.addColorStop(0, "#6ac0da");
-  gradient.addColorStop(0.42, "#2493c5");
-  gradient.addColorStop(1, "#083a67");
+  gradient.addColorStop(0, theme.waterTop);
+  gradient.addColorStop(0.42, theme.waterMid);
+  gradient.addColorStop(1, theme.waterBottom);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, state.waterLine, state.width, state.height - state.waterLine);
 
   drawWaterLines();
+  drawSpotDetails(theme.detail);
   state.ambientFish.forEach((fish) => drawFishShadow(fish, fish.alpha));
   if (state.targetFish) {
     drawFishShadow(state.targetFish, 0.5);
@@ -863,6 +919,7 @@ function drawWater() {
 }
 
 function drawWaterLines() {
+  const theme = getCurrentSpot().theme;
   for (let y = state.waterLine + 18; y < state.height; y += 42) {
     const depth = (y - state.waterLine) / Math.max(1, state.height - state.waterLine);
     const waveWidth = 14 + depth * 34;
@@ -879,9 +936,33 @@ function drawWaterLines() {
 
   const horizon = ctx.createLinearGradient(0, state.waterLine - 8, 0, state.waterLine + 18);
   horizon.addColorStop(0, "rgba(255,255,255,0)");
-  horizon.addColorStop(1, "rgba(255,255,255,0.32)");
+  horizon.addColorStop(1, theme.horizon);
   ctx.fillStyle = horizon;
   ctx.fillRect(0, state.waterLine - 8, state.width, 26);
+}
+
+function drawSpotDetails(detail) {
+  if (detail === "reef") {
+    ctx.fillStyle = "rgba(31, 61, 69, 0.42)";
+    ctx.beginPath();
+    ctx.ellipse(state.width * 0.18, state.waterLine + 42, 74, 18, -0.08, 0, Math.PI * 2);
+    ctx.ellipse(state.width * 0.82, state.waterLine + 64, 96, 22, 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (detail === "deep") {
+    const beams = ctx.createLinearGradient(0, state.waterLine, 0, state.height);
+    beams.addColorStop(0, "rgba(190, 226, 255, 0.18)");
+    beams.addColorStop(1, "rgba(190, 226, 255, 0)");
+    ctx.fillStyle = beams;
+    ctx.beginPath();
+    ctx.moveTo(state.width * 0.3, state.waterLine);
+    ctx.lineTo(state.width * 0.47, state.height);
+    ctx.lineTo(state.width * 0.58, state.height);
+    ctx.lineTo(state.width * 0.44, state.waterLine);
+    ctx.closePath();
+    ctx.fill();
+  }
 }
 
 function drawFishShadow(fish, alpha) {
@@ -1148,6 +1229,7 @@ menuSpotButton.addEventListener("click", () => showView("spot"));
 menuReloadButton.addEventListener("click", reloadLatest);
 menuDexButton.addEventListener("click", () => showView("dex"));
 menuShopButton.addEventListener("click", () => showView("shop"));
+fullResetButton.addEventListener("click", fullResetProgress);
 closeDexButton.addEventListener("click", () => showView("game"));
 closeShopButton.addEventListener("click", () => showView("game"));
 closeSpotButton.addEventListener("click", () => showView("game"));

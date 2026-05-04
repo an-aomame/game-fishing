@@ -171,6 +171,7 @@ button {
 .tab-button,
 .primary-button,
 .secondary-button,
+.danger-button,
 .dex-header button,
 .shop-header button,
 .buy-button {
@@ -224,7 +225,8 @@ button {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   font-size: clamp(20px, 4vw, 30px);
   min-height: 58px;
   padding: 0 20px;
@@ -234,6 +236,11 @@ button {
 .dex-header button {
   background: rgba(16, 32, 51, 0.1);
   color: var(--ink);
+}
+
+.danger-button {
+  background: rgba(176, 42, 42, 0.12);
+  color: #8f2424;
 }
 
 .dex-panel,
