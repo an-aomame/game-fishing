@@ -21,7 +21,7 @@ const dexList = document.querySelector("#dexList");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 
-const GAME_VERSION = "v0.9.0";
+const GAME_VERSION = "v0.9.1";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 
@@ -32,10 +32,10 @@ const rarityStyles = {
 };
 
 const rodUpgrades = [
-  { name: "竹の竿", cost: 0, biteBonus: 0, rareBonus: 0 },
-  { name: "しなやかな竿", cost: 160, biteBonus: 0.1, rareBonus: 0.12 },
-  { name: "銀の竿", cost: 420, biteBonus: 0.18, rareBonus: 0.28 },
-  { name: "金の竿", cost: 900, biteBonus: 0.28, rareBonus: 0.5 },
+  { name: "竹の竿", cost: 0, biteBonus: 0, rareBonus: 0, rodColor: "#5a3b28", accentColor: "rgba(245,229,168,0.75)", glow: 0 },
+  { name: "しなやかな竿", cost: 160, biteBonus: 0.1, rareBonus: 0.12, rodColor: "#2f6f55", accentColor: "#b7f0c3", glow: 2 },
+  { name: "銀の竿", cost: 420, biteBonus: 0.18, rareBonus: 0.28, rodColor: "#7d8f9a", accentColor: "#f3fbff", glow: 5 },
+  { name: "金の竿", cost: 900, biteBonus: 0.28, rareBonus: 0.5, rodColor: "#b97818", accentColor: "#ffe070", glow: 8 },
 ];
 
 const fishTypes = [
@@ -844,27 +844,45 @@ function drawRipples() {
 }
 
 function drawRod() {
+  const rod = rodUpgrades[state.rodLevel];
   const gripX = state.width * 0.5;
   const gripY = state.height + 58;
   const tipX = state.bobber.visible ? state.bobber.x : state.width * 0.5 + state.width * 0.05;
   const tipY = state.bobber.visible ? state.bobber.y - 12 : state.waterLine + state.height * 0.08;
   const controlX = state.width * 0.5 + Math.min(120, state.width * 0.18);
   const controlY = state.height * 0.58;
+  const rodWidth = Math.max(7, state.width * 0.014) + state.rodLevel * 0.8;
 
-  ctx.strokeStyle = "#5a3b28";
   ctx.lineCap = "round";
-  ctx.lineWidth = Math.max(7, state.width * 0.014);
+  if (rod.glow) {
+    ctx.strokeStyle = rod.accentColor;
+    ctx.globalAlpha = 0.34;
+    ctx.lineWidth = rodWidth + rod.glow;
+    ctx.beginPath();
+    ctx.moveTo(gripX, gripY);
+    ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.strokeStyle = rod.rodColor;
+  ctx.lineWidth = rodWidth;
   ctx.beginPath();
   ctx.moveTo(gripX, gripY);
   ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(245,229,168,0.75)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = rod.accentColor;
+  ctx.lineWidth = 2 + state.rodLevel * 0.35;
   ctx.beginPath();
   ctx.moveTo(gripX + 8, gripY - 12);
   ctx.quadraticCurveTo(controlX + 4, controlY - 2, tipX + 1, tipY + 1);
   ctx.stroke();
+
+  ctx.fillStyle = rod.accentColor;
+  ctx.beginPath();
+  ctx.arc(tipX, tipY, 2.6 + state.rodLevel * 0.9, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawForeground() {
