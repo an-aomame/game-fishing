@@ -304,6 +304,13 @@ button {
   grid-template-columns: 1fr;
 }
 
+.shop-section-title {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  margin: 8px 0 0;
+}
+
 .spot-list {
   grid-template-columns: 1fr;
 }

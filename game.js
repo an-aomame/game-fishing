@@ -30,7 +30,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.1.0";
+const GAME_VERSION = "v1.2.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -42,10 +42,42 @@ const rarityStyles = {
 };
 
 const rodUpgrades = [
-  { name: "竹の竿", cost: 0, biteBonus: 0, rareBonus: 0, rodColor: "#5a3b28", accentColor: "rgba(245,229,168,0.75)", glow: 0 },
-  { name: "しなやかな竿", cost: 160, biteBonus: 0.1, rareBonus: 0.12, rodColor: "#2f6f55", accentColor: "#b7f0c3", glow: 2 },
-  { name: "銀の竿", cost: 420, biteBonus: 0.18, rareBonus: 0.28, rodColor: "#7d8f9a", accentColor: "#f3fbff", glow: 5 },
-  { name: "金の竿", cost: 900, biteBonus: 0.28, rareBonus: 0.5, rodColor: "#b97818", accentColor: "#ffe070", glow: 8 },
+  { id: "bamboo", name: "竹の竿", cost: 0, power: 0, biteBonus: 0, rareBonus: 0, saleBonus: 0, rodColor: "#5a3b28", accentColor: "rgba(245,229,168,0.75)", glow: 0 },
+  { id: "flex", name: "しなやかな竿", cost: 160, power: 1, biteBonus: 0.1, rareBonus: 0.1, saleBonus: 0, rodColor: "#2f6f55", accentColor: "#b7f0c3", glow: 2 },
+  { id: "lucky", name: "星見の竿", cost: 360, power: 1, biteBonus: 0.02, rareBonus: 0.42, saleBonus: 0, rodColor: "#37508c", accentColor: "#d8e2ff", glow: 5 },
+  { id: "quick", name: "早合わせの竿", cost: 360, power: 1, biteBonus: 0.28, rareBonus: 0.08, saleBonus: 0, rodColor: "#7d8f9a", accentColor: "#f3fbff", glow: 4 },
+  { id: "merchant", name: "商人の竿", cost: 360, power: 1, biteBonus: 0.08, rareBonus: 0.05, saleBonus: 0.28, rodColor: "#b97818", accentColor: "#ffe070", glow: 5 },
+  { id: "master", name: "名人の竿", cost: 1100, power: 2, biteBonus: 0.24, rareBonus: 0.38, saleBonus: 0.16, rodColor: "#5b3d91", accentColor: "#ffc8ff", glow: 8 },
+];
+
+const floatUpgrades = [
+  { id: "plain", name: "ふつうの浮き", cost: 0, nibbleBonus: 0, biteBonus: 0 },
+  { id: "bright", name: "見やすい浮き", cost: 180, nibbleBonus: 0.18, biteBonus: 0.04 },
+  { id: "signal", name: "合図の浮き", cost: 460, nibbleBonus: 0.28, biteBonus: 0.1 },
+];
+
+const reelUpgrades = [
+  { id: "plain", name: "ふつうのリール", cost: 0, biteBonus: 0, saleBonus: 0 },
+  { id: "smooth", name: "なめらかリール", cost: 220, biteBonus: 0.08, saleBonus: 0.04 },
+  { id: "pro", name: "プロリール", cost: 620, biteBonus: 0.16, saleBonus: 0.1 },
+];
+
+const baitUpgrades = [
+  { id: "normal", name: "ふつうのエサ", cost: 0, rarityMultiplier: { C: 1, R: 1, SR: 1 }, fishBonus: {} },
+  { id: "rare", name: "きらめくエサ", cost: 260, rarityMultiplier: { C: 0.82, R: 1.16, SR: 1.45 }, fishBonus: {} },
+  { id: "tuna", name: "大物エサ", cost: 520, rarityMultiplier: { C: 0.72, R: 1, SR: 1.72 }, fishBonus: { "マグロ": 1.6, "ヌシ": 1.7 } },
+];
+
+const titleDefs = [
+  { id: "rookie", name: "新人釣り師", condition: () => true },
+  { id: "collector", name: "図鑑の友", condition: () => Object.keys(state.collection).length >= 5 },
+  { id: "deepHunter", name: "深海ハンター", condition: () => state.spotId === "deep" || state.collection["ヌシ"] },
+  { id: "legend", name: "伝説を釣る者", condition: () => Object.values(state.collection).reduce((sum, count) => sum + count, 0) >= 30 },
+];
+
+const dexRewardDefs = [
+  { id: "allC", label: "Cコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "C").every((type) => state.collection[type.name]) },
+  { id: "firstSR", label: "SR初入手", reward: 360, condition: (type) => type.rarity === "SR" },
 ];
 
 const sizeTiers = [
@@ -252,6 +284,14 @@ const state = {
   caughtCount: 0,
   money: loadEconomy().money,
   rodLevel: loadEconomy().rodLevel,
+  rodId: loadEconomy().rodId,
+  floatId: loadEconomy().floatId,
+  reelId: loadEconomy().reelId,
+  baitId: loadEconomy().baitId,
+  owned: loadEconomy().owned,
+  rewards: loadEconomy().rewards,
+  titleId: loadEconomy().titleId,
+  titles: loadEconomy().titles,
   spotId: loadEconomy().spotId,
   running: true,
   lastTime: 0,
@@ -271,18 +311,66 @@ const state = {
 function loadEconomy() {
   try {
     const economy = JSON.parse(localStorage.getItem(ECONOMY_KEY)) || {};
+    const legacyRodIds = ["bamboo", "flex", "quick", "master"];
+    const legacyRod = legacyRodIds[Math.min(economy.rodLevel || 0, legacyRodIds.length - 1)] || "bamboo";
+    const rodId = rodUpgrades.some((item) => item.id === economy.rodId) ? economy.rodId : legacyRod;
+    const owned = economy.owned || {};
     return {
       money: Number.isFinite(economy.money) ? economy.money : 0,
       rodLevel: Number.isFinite(economy.rodLevel) ? economy.rodLevel : 0,
+      rodId,
+      floatId: floatUpgrades.some((item) => item.id === economy.floatId) ? economy.floatId : "plain",
+      reelId: reelUpgrades.some((item) => item.id === economy.reelId) ? economy.reelId : "plain",
+      baitId: baitUpgrades.some((item) => item.id === economy.baitId) ? economy.baitId : "normal",
+      owned: {
+        rods: [
+          "bamboo",
+          rodId,
+          ...(owned.rods || []).filter((id) => id !== "bamboo" && id !== rodId && rodUpgrades.some((item) => item.id === id)),
+        ],
+        floats: ["plain", ...(owned.floats || []).filter((id) => id !== "plain" && floatUpgrades.some((item) => item.id === id))],
+        reels: ["plain", ...(owned.reels || []).filter((id) => id !== "plain" && reelUpgrades.some((item) => item.id === id))],
+        baits: ["normal", ...(owned.baits || []).filter((id) => id !== "normal" && baitUpgrades.some((item) => item.id === id))],
+      },
+      rewards: economy.rewards || {},
+      titleId: titleDefs.some((item) => item.id === economy.titleId) ? economy.titleId : "rookie",
+      titles: ["rookie", ...((economy.titles || []).filter((id) => id !== "rookie" && titleDefs.some((item) => item.id === id)))],
       spotId: fishingSpots.some((spot) => spot.id === economy.spotId) ? economy.spotId : "pier",
     };
   } catch {
-    return { money: 0, rodLevel: 0, spotId: "pier" };
+    return {
+      money: 0,
+      rodLevel: 0,
+      rodId: "bamboo",
+      floatId: "plain",
+      reelId: "plain",
+      baitId: "normal",
+      owned: { rods: ["bamboo"], floats: ["plain"], reels: ["plain"], baits: ["normal"] },
+      rewards: {},
+      titleId: "rookie",
+      titles: ["rookie"],
+      spotId: "pier",
+    };
   }
 }
 
 function saveEconomy() {
-  localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel, spotId: state.spotId }));
+  localStorage.setItem(
+    ECONOMY_KEY,
+    JSON.stringify({
+      money: state.money,
+      rodLevel: state.rodLevel,
+      rodId: state.rodId,
+      floatId: state.floatId,
+      reelId: state.reelId,
+      baitId: state.baitId,
+      owned: state.owned,
+      rewards: state.rewards,
+      titleId: state.titleId,
+      titles: state.titles,
+      spotId: state.spotId,
+    })
+  );
 }
 
 function fullResetProgress() {
@@ -297,6 +385,14 @@ function fullResetProgress() {
   state.caughtCount = 0;
   state.money = 0;
   state.rodLevel = 0;
+  state.rodId = "bamboo";
+  state.floatId = "plain";
+  state.reelId = "plain";
+  state.baitId = "normal";
+  state.owned = { rods: ["bamboo"], floats: ["plain"], reels: ["plain"], baits: ["normal"] };
+  state.rewards = {};
+  state.titleId = "rookie";
+  state.titles = ["rookie"];
   state.spotId = "pier";
   state.collection = {};
   state.missions = {};
@@ -336,6 +432,26 @@ function saveMissions() {
 
 function getCurrentSpot() {
   return fishingSpots.find((spot) => spot.id === state.spotId) || fishingSpots[0];
+}
+
+function getEquippedRod() {
+  return rodUpgrades.find((item) => item.id === state.rodId) || rodUpgrades[0];
+}
+
+function getEquippedFloat() {
+  return floatUpgrades.find((item) => item.id === state.floatId) || floatUpgrades[0];
+}
+
+function getEquippedReel() {
+  return reelUpgrades.find((item) => item.id === state.reelId) || reelUpgrades[0];
+}
+
+function getEquippedBait() {
+  return baitUpgrades.find((item) => item.id === state.baitId) || baitUpgrades[0];
+}
+
+function getCurrentTitle() {
+  return titleDefs.find((item) => item.id === state.titleId) || titleDefs[0];
 }
 
 function showView(view) {
@@ -381,13 +497,23 @@ function positionBobber() {
 }
 
 function randomFishType() {
-  const rod = rodUpgrades[state.rodLevel];
+  const rod = getEquippedRod();
+  const bait = getEquippedBait();
   const spot = getCurrentSpot();
   const weightedTypes = fishTypes.map((type) => {
     const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
     const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
     const rarityBoost = type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
-    return { type, weight: type.catchWeight * difficultyPenalty * spot.rarityMultiplier[type.rarity] * (1 + rarityBoost) };
+    return {
+      type,
+      weight:
+        type.catchWeight *
+        difficultyPenalty *
+        spot.rarityMultiplier[type.rarity] *
+        bait.rarityMultiplier[type.rarity] *
+        (1 + (bait.fishBonus[type.name] || 0)) *
+        (1 + rarityBoost),
+    };
   });
   const totalWeight = weightedTypes.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * totalWeight;
@@ -405,7 +531,7 @@ function randomFishType() {
 function getBiteWindow(type) {
   const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
   const difficultyPenalty = difficultyGap * 0.14;
-  return Math.max(0.24, type.biteWindow + rodUpgrades[state.rodLevel].biteBonus - difficultyPenalty);
+  return Math.max(0.24, type.biteWindow + getEquippedRod().biteBonus + getEquippedFloat().biteBonus + getEquippedReel().biteBonus - difficultyPenalty);
 }
 
 function randomFishSize() {
@@ -534,38 +660,64 @@ function renderDex() {
 
 function renderShop() {
   shopMoney.textContent = `${state.money}円`;
-  shopList.replaceChildren(
-    ...rodUpgrades.map((rod, index) => {
-      const owned = index <= state.rodLevel;
-      const next = index === state.rodLevel + 1;
-      const affordable = state.money >= rod.cost;
+  const sections = [
+    { title: "竿", items: rodUpgrades, ownedKey: "rods", equippedKey: "rodId", buy: buyRod, describe: describeRod },
+    { title: "浮き", items: floatUpgrades, ownedKey: "floats", equippedKey: "floatId", buy: buyFloat, describe: describeFloat },
+    { title: "リール", items: reelUpgrades, ownedKey: "reels", equippedKey: "reelId", buy: buyReel, describe: describeReel },
+    { title: "エサ", items: baitUpgrades, ownedKey: "baits", equippedKey: "baitId", buy: buyBait, describe: describeBait },
+  ];
+  const nodes = [];
+
+  for (const section of sections) {
+    const heading = document.createElement("h3");
+    heading.className = "shop-section-title";
+    heading.textContent = section.title;
+    nodes.push(heading);
+
+    for (const item of section.items) {
+      const owned = state.owned[section.ownedKey].includes(item.id);
+      const equipped = state[section.equippedKey] === item.id;
+      const affordable = state.money >= item.cost;
       const card = document.createElement("article");
       card.className = "shop-card";
 
       const info = document.createElement("div");
       const title = document.createElement("h3");
-      title.textContent = rod.name;
+      title.textContent = item.name;
       const detail = document.createElement("p");
-      const rareText = Math.round(rod.rareBonus * 100);
-      const biteText = Math.round(rod.biteBonus * 100) / 100;
-      detail.textContent = owned
-        ? index === state.rodLevel
-          ? `装備中 / 反応猶予 +${biteText}秒 / 高レア補正 +${rareText}%`
-          : "購入済み"
-        : `反応猶予 +${biteText}秒 / 高レア補正 +${rareText}%`;
+      detail.textContent = section.describe(item);
       info.append(title, detail);
 
       const button = document.createElement("button");
       button.className = "buy-button";
       button.type = "button";
-      button.disabled = !next || !affordable;
-      button.textContent = owned ? "所持" : `${rod.cost}円`;
-      button.addEventListener("click", () => buyRod(index));
+      button.disabled = equipped || (!owned && !affordable);
+      button.textContent = equipped ? "装備中" : owned ? "装備" : `${item.cost}円`;
+      button.addEventListener("click", () => section.buy(item.id));
 
       card.append(info, button);
-      return card;
-    })
-  );
+      nodes.push(card);
+    }
+  }
+
+  shopList.replaceChildren(...nodes);
+}
+
+function describeRod(rod) {
+  return `反応 +${rod.biteBonus.toFixed(2)}秒 / 高レア +${Math.round(rod.rareBonus * 100)}% / 売値 +${Math.round(rod.saleBonus * 100)}%`;
+}
+
+function describeFloat(float) {
+  return `前兆 +${float.nibbleBonus.toFixed(2)}秒 / 反応 +${float.biteBonus.toFixed(2)}秒`;
+}
+
+function describeReel(reel) {
+  return `反応 +${reel.biteBonus.toFixed(2)}秒 / 売値 +${Math.round(reel.saleBonus * 100)}%`;
+}
+
+function describeBait(bait) {
+  const sr = Math.round((bait.rarityMultiplier.SR - 1) * 100);
+  return sr ? `SR出現 ${sr > 0 ? "+" : ""}${sr}%` : "標準の出現率";
 }
 
 function renderSpots() {
@@ -580,7 +732,8 @@ function renderSpots() {
       const title = document.createElement("h3");
       title.textContent = spot.name;
       const detail = document.createElement("p");
-      detail.textContent = locked ? `${rodUpgrades[spot.unlockRodLevel].name}が必要` : spot.description;
+      const requiredRod = rodUpgrades.find((rod) => rod.power >= spot.unlockRodLevel);
+      detail.textContent = locked ? `${requiredRod.name}以上が必要` : spot.description;
       info.append(title, detail);
 
       const button = document.createElement("button");
@@ -616,12 +769,12 @@ function getMissionProgress(def) {
 function updateMissionSummary() {
   const openMission = missionDefs.find((def) => !state.missions[def.id]?.completed);
   if (!openMission) {
-    missionSummaryEl.textContent = "ミッション全達成";
+    missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / ミッション全達成`;
     return;
   }
 
   const progress = Math.min(openMission.target, getMissionProgress(openMission));
-  missionSummaryEl.textContent = `ミッション: ${openMission.label} ${progress}/${openMission.target}`;
+  missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / ${openMission.label} ${progress}/${openMission.target}`;
 }
 
 function updateMissions(type, salePrice) {
@@ -656,17 +809,76 @@ function updateMissions(type, salePrice) {
   return rewardTotal;
 }
 
-function buyRod(index) {
-  const rod = rodUpgrades[index];
-  if (index !== state.rodLevel + 1 || state.money < rod.cost) {
-    return;
+function updateRewards(type, firstTime) {
+  let rewardTotal = 0;
+  const discoveryId = `new:${type.name}`;
+
+  if (firstTime && !state.rewards[discoveryId]) {
+    state.rewards[discoveryId] = true;
+    state.money += 40;
+    rewardTotal += 40;
   }
 
-  state.money -= rod.cost;
-  state.rodLevel = index;
+  for (const def of dexRewardDefs) {
+    if (state.rewards[def.id]) continue;
+    if (!def.condition(type, firstTime)) continue;
+
+    state.rewards[def.id] = true;
+    state.money += def.reward;
+    rewardTotal += def.reward;
+  }
+
+  saveEconomy();
+  return rewardTotal;
+}
+
+function updateTitles() {
+  for (const def of titleDefs) {
+    if (!state.titles.includes(def.id) && def.condition()) {
+      state.titles.push(def.id);
+      state.titleId = def.id;
+    }
+  }
+  saveEconomy();
+}
+
+function buyOrEquip(collectionKey, equipKey, items, id) {
+  const item = items.find((entry) => entry.id === id);
+  if (!item) return;
+
+  if (!state.owned[collectionKey].includes(id)) {
+    if (state.money < item.cost) return;
+    state.money -= item.cost;
+    state.owned[collectionKey].push(id);
+  }
+
+  state[equipKey] = id;
+  if (collectionKey === "rods") {
+    state.rodLevel = item.power;
+    if (getCurrentSpot().unlockRodLevel > state.rodLevel) {
+      state.spotId = "pier";
+    }
+  }
+
   saveEconomy();
   updateHud();
   renderShop();
+}
+
+function buyRod(id) {
+  buyOrEquip("rods", "rodId", rodUpgrades, id);
+}
+
+function buyFloat(id) {
+  buyOrEquip("floats", "floatId", floatUpgrades, id);
+}
+
+function buyReel(id) {
+  buyOrEquip("reels", "reelId", reelUpgrades, id);
+}
+
+function buyBait(id) {
+  buyOrEquip("baits", "baitId", baitUpgrades, id);
 }
 
 function setMessage(text, buttonText) {
@@ -722,12 +934,17 @@ function castBobber() {
 
 function catchFish() {
   const fish = state.targetFish;
-  const salePrice = Math.round(fish.type.points * fish.size.multiplier);
+  const saleBonus = 1 + getEquippedRod().saleBonus + getEquippedReel().saleBonus;
+  const salePrice = Math.round(fish.type.points * fish.size.multiplier * saleBonus);
   state.score += fish.type.points;
   state.caughtCount += 1;
   state.money += salePrice;
+  const firstTime = !state.collection[fish.type.name];
   state.collection[fish.type.name] = (state.collection[fish.type.name] || 0) + 1;
+  const rewardTotal = updateRewards(fish.type, firstTime);
   const missionReward = updateMissions(fish.type, salePrice);
+  updateTitles();
+  updateMissionSummary();
   saveCollection();
   saveEconomy();
   state.phase = "showcase";
@@ -739,7 +956,8 @@ function catchFish() {
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  const rewardText = missionReward ? ` / ミッション +${missionReward}円` : "";
+  const totalBonus = missionReward + rewardTotal;
+  const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
   setMessage(`${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
 }
 
@@ -775,7 +993,7 @@ function updateFishing(delta) {
     state.phaseTimer -= delta;
     if (state.phaseTimer <= 0 && isTargetNearBobber()) {
       state.phase = "nibble";
-      state.phaseTimer = 0.5 + Math.random() * 0.75;
+      state.phaseTimer = 0.5 + getEquippedFloat().nibbleBonus + Math.random() * 0.75;
       setMessage("つついてる...", "まだ");
     }
   }
@@ -1159,14 +1377,14 @@ function drawRipples() {
 }
 
 function drawRod() {
-  const rod = rodUpgrades[state.rodLevel];
+  const rod = getEquippedRod();
   const gripX = state.width * 0.5;
   const gripY = state.height + 58;
   const tipX = state.bobber.visible ? state.bobber.x : state.width * 0.5 + state.width * 0.05;
   const tipY = state.bobber.visible ? state.bobber.y - 12 : state.waterLine + state.height * 0.08;
   const controlX = state.width * 0.5 + Math.min(120, state.width * 0.18);
   const controlY = state.height * 0.58;
-  const rodWidth = Math.max(7, state.width * 0.014) + state.rodLevel * 0.8;
+  const rodWidth = Math.max(7, state.width * 0.014) + rod.power * 0.8;
 
   ctx.lineCap = "round";
   if (rod.glow) {
@@ -1188,7 +1406,7 @@ function drawRod() {
   ctx.stroke();
 
   ctx.strokeStyle = rod.accentColor;
-  ctx.lineWidth = 2 + state.rodLevel * 0.35;
+  ctx.lineWidth = 2 + rod.power * 0.35;
   ctx.beginPath();
   ctx.moveTo(gripX + 8, gripY - 12);
   ctx.quadraticCurveTo(controlX + 4, controlY - 2, tipX + 1, tipY + 1);
@@ -1196,7 +1414,7 @@ function drawRod() {
 
   ctx.fillStyle = rod.accentColor;
   ctx.beginPath();
-  ctx.arc(tipX, tipY, 2.6 + state.rodLevel * 0.9, 0, Math.PI * 2);
+  ctx.arc(tipX, tipY, 2.6 + rod.power * 0.9, 0, Math.PI * 2);
   ctx.fill();
 }
 
