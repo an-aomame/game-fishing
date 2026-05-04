@@ -31,7 +31,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.4.0";
+const GAME_VERSION = "v1.4.1";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -350,6 +350,18 @@ const fishTypes = [
     rarity: "R",
     catchWeight: 11,
     catchDifficulty: 1,
+  },
+  {
+    name: "ネコギョ",
+    points: 155,
+    shadow: 94,
+    speed: 54,
+    biteWindow: 0.5,
+    color: "#f3c28d",
+    image: "assets/fish/014.png",
+    rarity: "SR",
+    catchWeight: 4,
+    catchDifficulty: 3,
   },
 ];
 
