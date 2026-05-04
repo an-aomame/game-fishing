@@ -15,7 +15,7 @@ const menuDexButton = document.querySelector("#menuDexButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const dexList = document.querySelector("#dexList");
 
-const GAME_VERSION = "v0.7.0";
+const GAME_VERSION = "v0.8.0";
 const COLLECTION_KEY = "tapFishingCollection";
 
 const rarityStyles = {
@@ -34,6 +34,7 @@ const fishTypes = [
     color: "#dce8ec",
     image: "assets/fish/001.png",
     rarity: "C",
+    catchWeight: 32,
   },
   {
     name: "アジ",
@@ -44,6 +45,7 @@ const fishTypes = [
     color: "#87b8d6",
     image: "assets/fish/002.png",
     rarity: "C",
+    catchWeight: 28,
   },
   {
     name: "タイ",
@@ -54,9 +56,54 @@ const fishTypes = [
     color: "#f17a73",
     image: "assets/fish/003.png",
     rarity: "R",
+    catchWeight: 18,
   },
-  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba", rarity: "R" },
-  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8", rarity: "SR" },
+  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba", rarity: "R", catchWeight: 14 },
+  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8", rarity: "SR", catchWeight: 7 },
+  {
+    name: "カワハギ",
+    points: 65,
+    shadow: 70,
+    speed: 60,
+    biteWindow: 0.66,
+    color: "#167988",
+    image: "assets/fish/004.png",
+    rarity: "R",
+    catchWeight: 13,
+  },
+  {
+    name: "マンボウ",
+    points: 90,
+    shadow: 88,
+    speed: 42,
+    biteWindow: 0.58,
+    color: "#f7cbd8",
+    image: "assets/fish/005.png",
+    rarity: "SR",
+    catchWeight: 6,
+  },
+  {
+    name: "ニジイロギョ",
+    points: 150,
+    shadow: 92,
+    speed: 62,
+    biteWindow: 0.5,
+    color: "#ff5eb8",
+    image: "assets/fish/006.png",
+    rarity: "SR",
+    catchWeight: 4,
+  },
+  {
+    name: "ヌシ",
+    points: 180,
+    shadow: 104,
+    speed: 38,
+    biteWindow: 0.46,
+    color: "#347d9f",
+    image: "assets/fish/007.png",
+    rarity: "SR",
+    catchWeight: 3,
+  },
 ];
 
 const fishImages = new Map();
@@ -136,11 +183,16 @@ function positionBobber() {
 }
 
 function randomFishType() {
-  const roll = Math.random();
-  if (roll > 0.94) return fishTypes[4];
-  if (roll > 0.82) return fishTypes[3];
-  if (roll > 0.58) return fishTypes[2];
-  if (roll > 0.28) return fishTypes[1];
+  const totalWeight = fishTypes.reduce((sum, type) => sum + type.catchWeight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (const type of fishTypes) {
+    roll -= type.catchWeight;
+    if (roll <= 0) {
+      return type;
+    }
+  }
+
   return fishTypes[0];
 }
 
