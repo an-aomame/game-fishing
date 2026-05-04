@@ -7,15 +7,48 @@ const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 
-const GAME_VERSION = "v0.4.0";
+const GAME_VERSION = "v0.4.1";
 
 const fishTypes = [
-  { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92, color: "#dce8ec" },
-  { name: "アジ", points: 20, shadow: 42, speed: 82, biteWindow: 0.82, color: "#87b8d6" },
-  { name: "タイ", points: 45, shadow: 58, speed: 68, biteWindow: 0.72, color: "#f17a73" },
+  {
+    name: "ワカサギ",
+    points: 10,
+    shadow: 30,
+    speed: 96,
+    biteWindow: 0.92,
+    color: "#dce8ec",
+    image: "assets/fish/001.png",
+  },
+  {
+    name: "アジ",
+    points: 20,
+    shadow: 42,
+    speed: 82,
+    biteWindow: 0.82,
+    color: "#87b8d6",
+    image: "assets/fish/002.png",
+  },
+  {
+    name: "タイ",
+    points: 45,
+    shadow: 58,
+    speed: 68,
+    biteWindow: 0.72,
+    color: "#f17a73",
+    image: "assets/fish/003.png",
+  },
   { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba" },
   { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8" },
 ];
+
+const fishImages = new Map();
+
+fishTypes.forEach((type) => {
+  if (!type.image) return;
+  const image = new Image();
+  image.src = type.image;
+  fishImages.set(type.image, image);
+});
 
 const state = {
   width: 0,
@@ -388,6 +421,17 @@ function drawFishShadow(fish, alpha) {
 }
 
 function drawFishBody(type, x, y, size, direction) {
+  const image = type.image ? fishImages.get(type.image) : null;
+  if (image?.complete && image.naturalWidth > 0) {
+    const imageSize = size * 2.28;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(direction, 1);
+    ctx.drawImage(image, -imageSize * 0.5, -imageSize * 0.5, imageSize, imageSize);
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(direction, 1);
