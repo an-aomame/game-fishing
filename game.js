@@ -30,7 +30,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.2.0";
+const GAME_VERSION = "v1.2.1";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -197,6 +197,7 @@ const fishTypes = [
     speed: 58,
     biteWindow: 0.62,
     color: "#9fc5ba",
+    image: "assets/fish/011.png",
     rarity: "R",
     catchWeight: 14,
     catchDifficulty: 1,
@@ -208,6 +209,7 @@ const fishTypes = [
     speed: 48,
     biteWindow: 0.54,
     color: "#4c73b8",
+    image: "assets/fish/012.png",
     rarity: "SR",
     catchWeight: 7,
     catchDifficulty: 2,
