@@ -31,7 +31,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.4.1";
+const GAME_VERSION = "v1.5.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -601,6 +601,57 @@ function scheduleVoice(note, startTime, duration, type, volume) {
   gain.connect(masterGain);
   oscillator.start(startTime);
   oscillator.stop(startTime + duration + 0.05);
+}
+
+function playSfxTone(startTime, frequency, duration, type, volume, endFrequency = frequency) {
+  const context = state.audio.context;
+  const masterGain = state.audio.masterGain;
+  if (!context || !masterGain) return;
+
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, endFrequency), startTime + duration);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  oscillator.connect(gain);
+  gain.connect(masterGain);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration + 0.04);
+}
+
+function playSfx(kind) {
+  const context = state.audio.context;
+  if (!context || context.state !== "running") {
+    return;
+  }
+
+  const now = context.currentTime + 0.01;
+
+  if (kind === "nibble") {
+    playSfxTone(now, 700, 0.05, "square", 0.035, 620);
+    playSfxTone(now + 0.07, 760, 0.05, "square", 0.03, 680);
+    return;
+  }
+
+  if (kind === "bite") {
+    playSfxTone(now, 980, 0.08, "triangle", 0.05, 440);
+    playSfxTone(now + 0.05, 620, 0.12, "sine", 0.035, 240);
+    return;
+  }
+
+  if (kind === "catch") {
+    playSfxTone(now, 520, 0.08, "triangle", 0.045, 680);
+    playSfxTone(now + 0.08, 680, 0.09, "triangle", 0.045, 880);
+    playSfxTone(now + 0.18, 880, 0.14, "sine", 0.04, 1180);
+    return;
+  }
+
+  if (kind === "miss") {
+    playSfxTone(now, 360, 0.12, "sawtooth", 0.03, 150);
+  }
 }
 
 function scheduleBgm() {
@@ -1218,6 +1269,7 @@ function catchFish() {
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
+  playSfx("catch");
   const totalBonus = missionReward + rewardTotal;
   const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
   setMessage(`${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
@@ -1229,6 +1281,7 @@ function missFish(text) {
   state.bobber.sunk = false;
   state.targetFish = null;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 10, alpha: 0.8 });
+  playSfx("miss");
   setMessage(text, "次を投げる");
 }
 
@@ -1257,6 +1310,7 @@ function updateFishing(delta) {
     if (state.phaseTimer <= 0 && isTargetNearBobber()) {
       state.phase = "nibble";
       state.phaseTimer = 0.5 + getEquippedFloat().nibbleBonus + Math.random() * 0.75;
+      playSfx("nibble");
       setMessage("つついてる...", "まだ");
     }
   }
@@ -1271,6 +1325,7 @@ function updateFishing(delta) {
       state.bobber.sunk = true;
       state.bobber.y = state.bobber.baseY + 32;
       state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 12, alpha: 1 });
+      playSfx("bite");
       setMessage("いまだ!", "引く");
     }
   }
