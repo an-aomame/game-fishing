@@ -65,6 +65,30 @@
             <button id="closeDexButton" type="button">戻る</button>
           </header>
           <div id="dexList" class="dex-list"></div>
+          <section id="dexDetail" class="dex-detail is-hidden" aria-label="魚の解説">
+            <button id="closeDexDetailButton" class="dex-detail-close" type="button" aria-label="解説を閉じる">戻る</button>
+            <div class="dex-detail-card">
+              <div class="dex-detail-top">
+                <div id="dexDetailArt" class="dex-detail-art"></div>
+                <div class="dex-detail-summary">
+                  <div class="dex-detail-doctor">
+                    <span class="doctor-mark">博</span>
+                    <div>
+                      <strong>おさかな博士</strong>
+                      <p id="dexDetailLead">調査中じゃ。</p>
+                    </div>
+                  </div>
+                  <div class="dex-detail-head">
+                    <span id="dexDetailRarity" class="dex-rarity">C</span>
+                    <h3 id="dexDetailName">???</h3>
+                    <p id="dexDetailMeta">未発見</p>
+                  </div>
+                  <div id="dexDetailSizes" class="dex-sizes"></div>
+                </div>
+              </div>
+              <p id="dexDetailText" class="dex-detail-text">まだ詳しい資料がそろっておらんようじゃ。</p>
+            </div>
+          </section>
         </div>
       </section>
 
@@ -92,7 +116,7 @@
       </section>
     </main>
 
-    <script src="game-config.js?v=1.7.1"></script>
-    <script src="game.js?v=1.7.1"></script>
+    <script src="game-config.js?v=1.8.0"></script>
+    <script src="game.js?v=1.8.0"></script>
   </body>
 </html>

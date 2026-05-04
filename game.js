@@ -23,10 +23,19 @@ const menuDexButton = document.querySelector("#menuDexButton");
 const menuShopButton = document.querySelector("#menuShopButton");
 const fullResetButton = document.querySelector("#fullResetButton");
 const closeDexButton = document.querySelector("#closeDexButton");
+const closeDexDetailButton = document.querySelector("#closeDexDetailButton");
 const closeShopButton = document.querySelector("#closeShopButton");
 const closeSpotButton = document.querySelector("#closeSpotButton");
 const musicToggleButton = document.querySelector("#musicToggleButton");
 const dexList = document.querySelector("#dexList");
+const dexDetail = document.querySelector("#dexDetail");
+const dexDetailArt = document.querySelector("#dexDetailArt");
+const dexDetailLead = document.querySelector("#dexDetailLead");
+const dexDetailRarity = document.querySelector("#dexDetailRarity");
+const dexDetailName = document.querySelector("#dexDetailName");
+const dexDetailMeta = document.querySelector("#dexDetailMeta");
+const dexDetailSizes = document.querySelector("#dexDetailSizes");
+const dexDetailText = document.querySelector("#dexDetailText");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
@@ -117,6 +126,48 @@ const state = {
     unlocked: false,
   },
 };
+
+function closeDexDetail() {
+  dexDetail.classList.add("is-hidden");
+}
+
+function openDexDetail(type) {
+  const entry = getCollectionEntry(type.name);
+  const discovered = entry.count > 0;
+  dexDetailArt.replaceChildren();
+
+  if (discovered && type.image) {
+    const image = document.createElement("img");
+    image.src = type.image;
+    image.alt = type.name;
+    dexDetailArt.append(image);
+  } else {
+    const shadow = document.createElement("span");
+    shadow.className = "dex-shadow";
+    shadow.style.width = `${Math.min(82, Math.max(46, type.shadow))}%`;
+    dexDetailArt.append(shadow);
+  }
+
+  dexDetailRarity.className = discovered ? `dex-rarity rarity-${type.rarity.toLowerCase()}` : "dex-rarity";
+  dexDetailRarity.textContent = discovered ? type.rarity : "?";
+  dexDetailName.textContent = discovered ? type.name : "???";
+  dexDetailMeta.textContent = discovered ? `${entry.count}匹 / ${type.points}pt` : "未発見";
+  dexDetailLead.textContent = discovered ? `${type.name}のことなら、わしに聞くとよいぞい。` : "まだ姿が確認できておらんのう。";
+  dexDetailText.textContent = discovered
+    ? type.description || "まだ詳しい解説は準備中じゃ。"
+    : "まずは実際に釣り上げてみるのじゃ。姿を確かめれば、図鑑の記録もぐっと深まるぞい。";
+
+  dexDetailSizes.replaceChildren(
+    ...sizeTiers.map((tier) => {
+      const chip = document.createElement("span");
+      chip.className = `dex-size${discovered && entry.sizes[tier.label] ? " is-caught" : ""}`;
+      chip.textContent = tier.label;
+      return chip;
+    })
+  );
+
+  dexDetail.classList.remove("is-hidden");
+}
 
 function loadMusicEnabled() {
   try {
@@ -516,6 +567,7 @@ function showView(view) {
   shopTab.classList.toggle("is-active", view === "shop");
 
   if (view === "dex") {
+    closeDexDetail();
     renderDex();
   }
   if (view === "shop") {
@@ -676,7 +728,8 @@ function renderDex() {
       const entry = getCollectionEntry(type.name);
       const count = entry.count;
       const sizeComplete = count ? isSizeComplete(type.name) : false;
-      const card = document.createElement("article");
+      const card = document.createElement("button");
+      card.type = "button";
       card.className = `dex-card${count ? "" : " is-locked"}`;
 
       const art = document.createElement("div");
@@ -725,6 +778,7 @@ function renderDex() {
         sizes.append(chip);
       }
 
+      card.addEventListener("click", () => openDexDetail(type));
       card.append(art, header, name, meta, sizes);
       return card;
     })
@@ -1571,6 +1625,12 @@ menuShopButton.addEventListener("click", () => {
 });
 fullResetButton.addEventListener("click", fullResetProgress);
 closeDexButton.addEventListener("click", () => showView("game"));
+closeDexDetailButton.addEventListener("click", closeDexDetail);
+dexDetail.addEventListener("click", (event) => {
+  if (event.target === dexDetail) {
+    closeDexDetail();
+  }
+});
 closeShopButton.addEventListener("click", () => showView("game"));
 closeSpotButton.addEventListener("click", () => showView("game"));
 
