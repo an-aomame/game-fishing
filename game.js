@@ -15,7 +15,7 @@ const menuDexButton = document.querySelector("#menuDexButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const dexList = document.querySelector("#dexList");
 
-const GAME_VERSION = "v0.5.0";
+const GAME_VERSION = "v0.6.0";
 const COLLECTION_KEY = "tapFishingCollection";
 
 const fishTypes = [
@@ -114,7 +114,7 @@ function resizeCanvas() {
   canvas.width = Math.floor(state.width * state.pixelRatio);
   canvas.height = Math.floor(state.height * state.pixelRatio);
   ctx.setTransform(state.pixelRatio, 0, 0, state.pixelRatio, 0, 0);
-  state.waterLine = state.height * 0.32;
+  state.waterLine = state.height * 0.38;
   state.rodX = state.width * 0.5;
   positionBobber();
   makeAmbientFish();
@@ -122,7 +122,7 @@ function resizeCanvas() {
 
 function positionBobber() {
   state.bobber.x = state.width * 0.5;
-  state.bobber.baseY = state.waterLine + Math.max(70, state.height * 0.18);
+  state.bobber.baseY = state.waterLine + Math.max(64, state.height * 0.16);
   state.bobber.y = state.bobber.baseY;
 }
 
@@ -142,8 +142,8 @@ function makeAmbientFish() {
 function makeShadow(index) {
   const type = randomFishType();
   const direction = Math.random() > 0.5 ? 1 : -1;
-  const yMin = state.waterLine + 70;
-  const yMax = state.height - 64;
+  const yMin = state.waterLine + 58;
+  const yMax = state.height - Math.max(118, state.height * 0.22);
   return {
     type,
     x: direction > 0 ? -type.shadow - index * 120 : state.width + type.shadow + index * 120,
@@ -158,11 +158,11 @@ function makeShadow(index) {
 function makeTargetFish() {
   const type = randomFishType();
   const side = Math.random() > 0.5 ? -1 : 1;
-  const startX = state.bobber.x + side * Math.max(state.width * 0.38, 260);
+  const startX = state.bobber.x + side * Math.max(state.width * 0.3, 180);
   return {
     type,
     x: startX,
-    y: state.bobber.baseY + 86 + Math.random() * 70,
+    y: state.bobber.baseY + 62 + Math.random() * 42,
     targetX: state.bobber.x + (Math.random() - 0.5) * 24,
     targetY: state.bobber.baseY + 34,
     direction: side > 0 ? -1 : 1,
@@ -274,7 +274,7 @@ function castBobber() {
   state.phaseTimer = 0.34;
   state.bobber.visible = true;
   state.bobber.sunk = false;
-  state.bobber.y = state.waterLine - 22;
+  state.bobber.y = state.height - 52;
   state.targetFish = makeTargetFish();
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 6, alpha: 1 });
   setMessage("魚影が近づくまで待とう", "待つ");
@@ -426,8 +426,8 @@ function draw() {
 
 function drawSky() {
   const gradient = ctx.createLinearGradient(0, 0, 0, state.waterLine);
-  gradient.addColorStop(0, "#8bd5f0");
-  gradient.addColorStop(1, "#dff8fb");
+  gradient.addColorStop(0, "#86d8f0");
+  gradient.addColorStop(1, "#eef9f6");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, state.width, state.waterLine);
 
@@ -451,8 +451,9 @@ function drawCloud(x, y, scale) {
 
 function drawWater() {
   const gradient = ctx.createLinearGradient(0, state.waterLine, 0, state.height);
-  gradient.addColorStop(0, "#3ba9d3");
-  gradient.addColorStop(1, "#0a416f");
+  gradient.addColorStop(0, "#6ac0da");
+  gradient.addColorStop(0.42, "#2493c5");
+  gradient.addColorStop(1, "#083a67");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, state.waterLine, state.width, state.height - state.waterLine);
 
@@ -466,17 +467,25 @@ function drawWater() {
 }
 
 function drawWaterLines() {
-  ctx.strokeStyle = "rgba(255,255,255,0.36)";
-  ctx.lineWidth = 3;
-  for (let y = state.waterLine + 18; y < state.height; y += 58) {
+  for (let y = state.waterLine + 18; y < state.height; y += 42) {
+    const depth = (y - state.waterLine) / Math.max(1, state.height - state.waterLine);
+    const waveWidth = 14 + depth * 34;
+    ctx.strokeStyle = `rgba(255,255,255,${0.34 - depth * 0.12})`;
+    ctx.lineWidth = 1.4 + depth * 2.2;
     ctx.beginPath();
-    for (let x = -20; x <= state.width + 20; x += 28) {
-      const waveY = y + Math.sin((x + performance.now() * 0.04) * 0.04) * 5;
-      if (x === -20) ctx.moveTo(x, waveY);
+    for (let x = -20; x <= state.width + 20; x += waveWidth) {
+      const waveY = y + Math.sin((x + performance.now() * 0.045) * 0.035) * (2 + depth * 6);
+      if (x <= -20) ctx.moveTo(x, waveY);
       else ctx.lineTo(x, waveY);
     }
     ctx.stroke();
   }
+
+  const horizon = ctx.createLinearGradient(0, state.waterLine - 8, 0, state.waterLine + 18);
+  horizon.addColorStop(0, "rgba(255,255,255,0)");
+  horizon.addColorStop(1, "rgba(255,255,255,0.32)");
+  ctx.fillStyle = horizon;
+  ctx.fillRect(0, state.waterLine - 8, state.width, 26);
 }
 
 function drawFishShadow(fish, alpha) {
@@ -579,23 +588,25 @@ function drawShowcase() {
 
 function drawBobber() {
   if (!state.bobber.visible) return;
-  const bobberTop = state.bobber.sunk ? state.bobber.y - 7 : state.bobber.y - 22;
+  const depth = Math.max(0, Math.min(1, (state.bobber.baseY - state.waterLine) / (state.height - state.waterLine)));
+  const bobberScale = 0.58 + depth * 0.5;
+  const bobberTop = state.bobber.sunk ? state.bobber.y - 5 * bobberScale : state.bobber.y - 18 * bobberScale;
 
   ctx.strokeStyle = "rgba(16,32,51,0.64)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(state.rodX + 18, state.waterLine - 66);
+  ctx.moveTo(state.width * 0.5 + Math.min(110, state.width * 0.16), state.height - 66);
   ctx.lineTo(state.bobber.x, bobberTop);
   ctx.stroke();
 
   ctx.fillStyle = "#f8f6e7";
   ctx.beginPath();
-  ctx.ellipse(state.bobber.x, bobberTop + 10, 10, 18, 0, 0, Math.PI * 2);
+  ctx.ellipse(state.bobber.x, bobberTop + 10 * bobberScale, 9 * bobberScale, 17 * bobberScale, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#e83b42";
   ctx.beginPath();
-  ctx.ellipse(state.bobber.x, bobberTop + 3, 10, 10, 0, Math.PI, Math.PI * 2);
+  ctx.ellipse(state.bobber.x, bobberTop + 3 * bobberScale, 9 * bobberScale, 9 * bobberScale, 0, Math.PI, Math.PI * 2);
   ctx.fill();
 
   if (state.bobber.sunk) {
@@ -617,23 +628,55 @@ function drawRipples() {
 }
 
 function drawRod() {
-  const deckY = state.waterLine - 8;
-  ctx.strokeStyle = "#553c2b";
+  const gripX = state.width * 0.5;
+  const gripY = state.height + 26;
+  const tipX = state.bobber.visible ? state.bobber.x : state.width * 0.5 + state.width * 0.05;
+  const tipY = state.bobber.visible ? state.bobber.y - 12 : state.waterLine + state.height * 0.08;
+  const controlX = state.width * 0.5 + Math.min(120, state.width * 0.18);
+  const controlY = state.height * 0.58;
+
+  ctx.strokeStyle = "#5a3b28";
   ctx.lineCap = "round";
-  ctx.lineWidth = 8;
+  ctx.lineWidth = Math.max(9, state.width * 0.018);
   ctx.beginPath();
-  ctx.moveTo(state.rodX - 86, deckY);
-  ctx.quadraticCurveTo(state.rodX - 28, deckY - 88, state.rodX + 18, deckY - 58);
+  ctx.moveTo(gripX, gripY);
+  ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(245,229,168,0.75)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(gripX + 8, gripY - 12);
+  ctx.quadraticCurveTo(controlX + 4, controlY - 2, tipX + 1, tipY + 1);
   ctx.stroke();
 }
 
 function drawForeground() {
-  ctx.fillStyle = "#725338";
-  ctx.fillRect(0, state.waterLine - 12, state.width, 16);
-  ctx.fillStyle = "#8d6745";
-  for (let x = 0; x < state.width; x += 82) {
-    ctx.fillRect(x, state.waterLine - 18, 50, 22);
-  }
+  const handY = state.height - 42;
+  const handSize = Math.min(72, Math.max(42, state.width * 0.13));
+  const leftX = state.width * 0.5 - handSize * 0.72;
+  const rightX = state.width * 0.5 + handSize * 0.72;
+
+  ctx.fillStyle = "rgba(4, 24, 38, 0.18)";
+  ctx.beginPath();
+  ctx.ellipse(state.width * 0.5, state.height + 8, state.width * 0.38, 44, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#f0b27a";
+  ctx.beginPath();
+  ctx.ellipse(leftX, handY, handSize * 0.48, handSize * 0.34, -0.38, 0, Math.PI * 2);
+  ctx.ellipse(rightX, handY - 4, handSize * 0.48, handSize * 0.34, 0.38, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#263b4d";
+  ctx.fillRect(state.width * 0.5 - handSize * 0.36, handY - 18, handSize * 0.72, handSize * 0.6);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, state.height - 18);
+  ctx.quadraticCurveTo(state.width * 0.5, state.height - 42, state.width, state.height - 18);
+  ctx.stroke();
 }
 
 function loop(time) {
