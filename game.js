@@ -15,8 +15,14 @@ const menuDexButton = document.querySelector("#menuDexButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const dexList = document.querySelector("#dexList");
 
-const GAME_VERSION = "v0.6.1";
+const GAME_VERSION = "v0.7.0";
 const COLLECTION_KEY = "tapFishingCollection";
+
+const rarityStyles = {
+  C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
+  R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
+  SR: { label: "SR", color: "#d68a18", glow: "rgba(255, 205, 84, 0.74)", particles: 28 },
+};
 
 const fishTypes = [
   {
@@ -27,6 +33,7 @@ const fishTypes = [
     biteWindow: 0.92,
     color: "#dce8ec",
     image: "assets/fish/001.png",
+    rarity: "C",
   },
   {
     name: "アジ",
@@ -36,6 +43,7 @@ const fishTypes = [
     biteWindow: 0.82,
     color: "#87b8d6",
     image: "assets/fish/002.png",
+    rarity: "C",
   },
   {
     name: "タイ",
@@ -45,9 +53,10 @@ const fishTypes = [
     biteWindow: 0.72,
     color: "#f17a73",
     image: "assets/fish/003.png",
+    rarity: "R",
   },
-  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba" },
-  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8" },
+  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba", rarity: "R" },
+  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8", rarity: "SR" },
 ];
 
 const fishImages = new Map();
@@ -221,11 +230,15 @@ function renderDex() {
       name.className = "dex-name";
       name.textContent = count ? type.name : "???";
 
+      const rarity = document.createElement("div");
+      rarity.className = `dex-rarity rarity-${type.rarity.toLowerCase()}`;
+      rarity.textContent = type.rarity;
+
       const meta = document.createElement("div");
       meta.className = "dex-meta";
       meta.textContent = count ? `${count}匹 / ${type.points}pt` : "未発見";
 
-      card.append(art, name, meta);
+      card.append(art, rarity, name, meta);
       return card;
     })
   );
@@ -553,36 +566,89 @@ function drawFishBody(type, x, y, size, direction) {
   ctx.restore();
 }
 
+function drawShowcaseParticles(style, progress, fade, centerX, centerY, radius) {
+  for (let index = 0; index < style.particles; index += 1) {
+    const angle = index * 2.399 + progress * 3.2;
+    const orbit = radius * (0.42 + (index % 5) * 0.13 + progress * 0.18);
+    const sparkleX = centerX + Math.cos(angle) * orbit;
+    const sparkleY = centerY + Math.sin(angle * 0.86) * orbit * 0.56;
+    const sparkleSize = 2.5 + (index % 4) * 1.3;
+
+    ctx.globalAlpha = fade * (0.35 + (index % 3) * 0.18);
+    ctx.fillStyle = style.color;
+    ctx.beginPath();
+    ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = fade;
+}
+
+function fillRoundedRect(x, y, width, height, radius) {
+  const corner = Math.min(radius, width * 0.5, height * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(x + corner, y);
+  ctx.lineTo(x + width - corner, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + corner);
+  ctx.lineTo(x + width, y + height - corner);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - corner, y + height);
+  ctx.lineTo(x + corner, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - corner);
+  ctx.lineTo(x, y + corner);
+  ctx.quadraticCurveTo(x, y, x + corner, y);
+  ctx.fill();
+}
+
 function drawShowcase() {
   if (!state.showcaseFish) return;
+  const style = rarityStyles[state.showcaseFish.rarity];
   const progress = 1 - state.showcaseTimer / 1.8;
   const pop = Math.min(1, progress * 4);
   const fade = Math.min(1, state.showcaseTimer * 4);
-  const size = Math.min(state.width * 0.22, state.height * 0.16, 132) * (0.82 + pop * 0.18);
-  const y = state.height * 0.49 + Math.sin(progress * Math.PI) * -18;
+  const size = Math.min(state.width * 0.34, state.height * 0.23, 188) * (0.8 + pop * 0.2);
+  const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = 0.58 * fade;
+  ctx.globalAlpha = (state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();
 
   ctx.save();
   ctx.globalAlpha = fade;
+  const glow = ctx.createRadialGradient(state.width * 0.5, y, size * 0.2, state.width * 0.5, y, size * 2.4);
+  glow.addColorStop(0, style.glow);
+  glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.ellipse(state.width * 0.5, y + size * 0.02, size * 2.45, size * 1.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (state.showcaseFish.rarity !== "C") {
+    drawShowcaseParticles(style, progress, fade, state.width * 0.5, y, size * 1.42);
+  }
+
   ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.beginPath();
-  ctx.ellipse(state.width * 0.5, y + size * 0.18, size * 1.88, size * 0.92, 0, 0, Math.PI * 2);
+  ctx.ellipse(state.width * 0.5, y + size * 0.18, size * 1.76, size * 0.86, 0, 0, Math.PI * 2);
   ctx.fill();
   drawFishBody(state.showcaseFish, state.width * 0.5, y, size, 1);
+
+  ctx.fillStyle = style.color;
+  fillRoundedRect(state.width * 0.5 - size * 0.46, y + size * 0.66, size * 0.92, size * 0.3, 8);
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `900 ${Math.max(18, Math.min(30, state.width * 0.06))}px ui-rounded, system-ui, sans-serif`;
+  ctx.fillText(state.showcaseFish.rarity, state.width * 0.5, y + size * 0.81);
 
   ctx.fillStyle = "#102033";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = `900 ${Math.max(26, Math.min(42, state.width * 0.08))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(state.showcaseFish.name, state.width * 0.5, y + size * 0.84);
-  ctx.font = `800 ${Math.max(16, Math.min(24, state.width * 0.045))}px ui-rounded, system-ui, sans-serif`;
+  ctx.font = `900 ${Math.max(30, Math.min(50, state.width * 0.095))}px ui-rounded, system-ui, sans-serif`;
+  ctx.fillText(state.showcaseFish.name, state.width * 0.5, y + size * 1.18);
+  ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(`+${state.showcaseFish.points}`, state.width * 0.5, y + size * 1.16);
+  ctx.fillText(`+${state.showcaseFish.points}`, state.width * 0.5, y + size * 1.48);
   ctx.restore();
 }
 

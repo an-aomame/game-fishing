@@ -298,6 +298,33 @@ button {
   line-height: 1.1;
 }
 
+.dex-rarity {
+  align-self: start;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  justify-self: start;
+  line-height: 1;
+  min-width: 34px;
+  padding: 5px 8px;
+  text-align: center;
+}
+
+.rarity-c {
+  background: #6f8798;
+}
+
+.rarity-r {
+  background: #2f8fcb;
+  box-shadow: 0 0 14px rgba(47, 143, 203, 0.34);
+}
+
+.rarity-sr {
+  background: #d68a18;
+  box-shadow: 0 0 18px rgba(255, 205, 84, 0.52);
+}
+
 .dex-meta {
   color: var(--muted);
   font-size: 13px;
