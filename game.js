@@ -30,7 +30,7 @@ const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.2.1";
+const GAME_VERSION = "v1.3.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
@@ -261,6 +261,54 @@ const fishTypes = [
     rarity: "SR",
     catchWeight: 3,
     catchDifficulty: 3,
+  },
+  {
+    name: "ハートフィッシュ",
+    points: 85,
+    shadow: 72,
+    speed: 70,
+    biteWindow: 0.64,
+    color: "#c9f0e8",
+    image: "assets/fish/008.png",
+    rarity: "R",
+    catchWeight: 10,
+    catchDifficulty: 1,
+  },
+  {
+    name: "ムーンフィッシュ",
+    points: 140,
+    shadow: 90,
+    speed: 56,
+    biteWindow: 0.52,
+    color: "#6d67b8",
+    image: "assets/fish/009.png",
+    rarity: "SR",
+    catchWeight: 5,
+    catchDifficulty: 2,
+  },
+  {
+    name: "コダマウオ",
+    points: 165,
+    shadow: 86,
+    speed: 66,
+    biteWindow: 0.48,
+    color: "#d9d7f8",
+    image: "assets/fish/010.png",
+    rarity: "SR",
+    catchWeight: 4,
+    catchDifficulty: 3,
+  },
+  {
+    name: "タコ",
+    points: 75,
+    shadow: 68,
+    speed: 64,
+    biteWindow: 0.68,
+    color: "#f3a5be",
+    image: "assets/fish/013.png",
+    rarity: "R",
+    catchWeight: 11,
+    catchDifficulty: 1,
   },
 ];
 
