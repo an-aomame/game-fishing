@@ -112,6 +112,19 @@ button {
   width: 48px;
 }
 
+#musicToggleButton {
+  background: rgba(16, 32, 51, 0.08);
+  color: var(--ink);
+  min-height: 48px;
+  min-width: 92px;
+  padding: 0 12px;
+}
+
+#musicToggleButton.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
 #gameCanvas {
   background: transparent;
   border-radius: 8px;
@@ -174,7 +187,8 @@ button {
 .danger-button,
 .dex-header button,
 .shop-header button,
-.buy-button {
+.buy-button,
+#musicToggleButton {
   border-radius: 8px;
   font-weight: 900;
 }
@@ -484,7 +498,7 @@ button {
   .hud {
     display: grid;
     gap: 6px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 0.9fr) 42px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 0.9fr) 78px 42px;
     min-height: 54px;
     padding: 8px;
   }
@@ -511,6 +525,14 @@ button {
     font-size: 22px;
     height: 42px;
     width: 42px;
+  }
+
+  #musicToggleButton {
+    align-self: center;
+    font-size: 11px;
+    min-height: 42px;
+    min-width: 0;
+    padding: 0 6px;
   }
 
   .status {

@@ -25,15 +25,17 @@ const fullResetButton = document.querySelector("#fullResetButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const closeShopButton = document.querySelector("#closeShopButton");
 const closeSpotButton = document.querySelector("#closeSpotButton");
+const musicToggleButton = document.querySelector("#musicToggleButton");
 const dexList = document.querySelector("#dexList");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v1.3.0";
+const GAME_VERSION = "v1.4.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 const MISSION_KEY = "tapFishingMissions";
+const MUSIC_KEY = "tapFishingMusic";
 
 const rarityStyles = {
   C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
@@ -146,6 +148,45 @@ const fishingSpots = [
     },
   },
 ];
+
+const bgmThemes = {
+  pier: {
+    tempo: 92,
+    leadType: "triangle",
+    padType: "sine",
+    leadGain: 0.04,
+    padGain: 0.022,
+    lead: [
+      ["E5"], [], ["G5"], [], ["A5"], [], ["G5"], [],
+      ["E5"], [], ["D5"], [], ["B4"], [], ["D5"], [],
+    ],
+    pad: [["E3"], [], ["B3"], [], ["C4"], [], ["B3"], []],
+  },
+  reef: {
+    tempo: 108,
+    leadType: "triangle",
+    padType: "square",
+    leadGain: 0.035,
+    padGain: 0.018,
+    lead: [
+      ["A4"], ["C5"], ["E5"], [], ["D5"], ["E5"], ["A5"], [],
+      ["G5"], ["E5"], ["D5"], [], ["C5"], ["D5"], ["E5"], [],
+    ],
+    pad: [["A3"], [], ["E4"], [], ["G3"], [], ["E4"], []],
+  },
+  deep: {
+    tempo: 72,
+    leadType: "sine",
+    padType: "triangle",
+    leadGain: 0.03,
+    padGain: 0.024,
+    lead: [
+      ["D5"], [], [], ["A4"], [], ["F4"], [], [],
+      ["E5"], [], [], ["C5"], [], ["A4"], [], [],
+    ],
+    pad: [["D3"], [], [], [], ["A2"], [], [], []],
+  },
+};
 
 const missionDefs = [
   { id: "catch5", label: "魚を5匹釣る", target: 5, reward: 90, kind: "count" },
@@ -356,7 +397,29 @@ const state = {
   ripples: [],
   collection: loadCollection(),
   missions: loadMissions(),
+  musicEnabled: loadMusicEnabled(),
+  audio: {
+    context: null,
+    masterGain: null,
+    nextNoteTime: 0,
+    noteIndex: 0,
+    currentThemeId: "",
+    unlocked: false,
+  },
 };
+
+function loadMusicEnabled() {
+  try {
+    const saved = localStorage.getItem(MUSIC_KEY);
+    return saved === null ? true : saved === "on";
+  } catch {
+    return true;
+  }
+}
+
+function saveMusicEnabled() {
+  localStorage.setItem(MUSIC_KEY, state.musicEnabled ? "on" : "off");
+}
 
 function loadEconomy() {
   try {
@@ -480,6 +543,139 @@ function saveMissions() {
   localStorage.setItem(MISSION_KEY, JSON.stringify(state.missions));
 }
 
+function noteToFrequency(note) {
+  const match = /^([A-G])(#?)(\d)$/.exec(note);
+  if (!match) return 440;
+  const [, letter, sharp, octaveText] = match;
+  const semitones = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 };
+  const octave = Number(octaveText);
+  const distance = semitones[letter] + (sharp ? 1 : 0) + (octave - 4) * 12;
+  return 440 * 2 ** (distance / 12);
+}
+
+function ensureAudioContext() {
+  if (state.audio.context) {
+    return state.audio.context;
+  }
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    return null;
+  }
+
+  const context = new AudioContextClass();
+  const masterGain = context.createGain();
+  masterGain.gain.value = 0.72;
+  masterGain.connect(context.destination);
+
+  state.audio.context = context;
+  state.audio.masterGain = masterGain;
+  return context;
+}
+
+function scheduleVoice(note, startTime, duration, type, volume) {
+  const context = state.audio.context;
+  const masterGain = state.audio.masterGain;
+  if (!context || !masterGain || !note) return;
+
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(noteToFrequency(note), startTime);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  oscillator.connect(gain);
+  gain.connect(masterGain);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration + 0.05);
+}
+
+function scheduleBgm() {
+  const context = state.audio.context;
+  if (!context || !state.musicEnabled || context.state !== "running") {
+    return;
+  }
+
+  const themeId = getCurrentSpot().id;
+  const theme = bgmThemes[themeId] || bgmThemes.pier;
+  const stepDuration = 60 / theme.tempo / 2;
+  const lookAhead = 0.18;
+
+  while (state.audio.nextNoteTime < context.currentTime + lookAhead) {
+    const stepIndex = state.audio.noteIndex;
+    const leadNotes = theme.lead[stepIndex % theme.lead.length] || [];
+    const padNotes = theme.pad[stepIndex % theme.pad.length] || [];
+
+    leadNotes.forEach((note) => {
+      scheduleVoice(note, state.audio.nextNoteTime, stepDuration * 0.92, theme.leadType, theme.leadGain);
+    });
+    padNotes.forEach((note) => {
+      scheduleVoice(note, state.audio.nextNoteTime, stepDuration * 1.8, theme.padType, theme.padGain);
+    });
+
+    state.audio.nextNoteTime += stepDuration;
+    state.audio.noteIndex += 1;
+  }
+}
+
+function updateMusicButton() {
+  musicToggleButton.textContent = state.musicEnabled ? "BGM ON" : "BGM OFF";
+  musicToggleButton.classList.toggle("is-on", state.musicEnabled);
+}
+
+function syncBgm(forceRestart = false) {
+  updateMusicButton();
+  if (!state.musicEnabled) {
+    state.audio.currentThemeId = "";
+    return;
+  }
+
+  const context = ensureAudioContext();
+  if (!context || !state.audio.unlocked) {
+    return;
+  }
+
+  const themeId = getCurrentSpot().id;
+  if (forceRestart || state.audio.currentThemeId !== themeId) {
+    state.audio.currentThemeId = themeId;
+    state.audio.noteIndex = 0;
+    state.audio.nextNoteTime = context.currentTime + 0.03;
+  }
+
+  scheduleBgm();
+}
+
+function unlockAudio() {
+  state.audio.unlocked = true;
+  const context = ensureAudioContext();
+  if (!context) {
+    updateMusicButton();
+    return;
+  }
+
+  if (context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+  syncBgm();
+}
+
+function toggleMusic() {
+  state.musicEnabled = !state.musicEnabled;
+  saveMusicEnabled();
+  updateMusicButton();
+
+  if (!state.musicEnabled) {
+    state.audio.currentThemeId = "";
+    if (state.audio.context && state.audio.context.state === "running") {
+      state.audio.context.suspend().catch(() => {});
+    }
+    return;
+  }
+
+  unlockAudio();
+}
+
 function getCurrentSpot() {
   return fishingSpots.find((spot) => spot.id === state.spotId) || fishingSpots[0];
 }
@@ -524,6 +720,8 @@ function showView(view) {
   if (view === "spot") {
     renderSpots();
   }
+
+  syncBgm();
 }
 
 function resizeCanvas() {
@@ -810,6 +1008,7 @@ function selectSpot(spotId) {
   makeAmbientFish();
   renderSpots();
   setMessage(`${spot.name}に移動した`, "投げる");
+  syncBgm(true);
 }
 
 function getMissionProgress(def) {
@@ -938,6 +1137,7 @@ function setMessage(text, buttonText) {
 
 function handleTap(event) {
   event.preventDefault();
+  unlockAudio();
   if (state.view !== "game") {
     return;
   }
@@ -1025,6 +1225,7 @@ function update(delta) {
   updateFishing(delta);
   updateAmbientFish(delta);
   updateRipples(delta);
+  scheduleBgm();
 }
 
 function updateFishing(delta) {
@@ -1484,19 +1685,54 @@ function loop(time) {
 }
 
 window.addEventListener("resize", resizeCanvas);
+document.addEventListener("visibilitychange", () => {
+  if (!state.audio.context) return;
+  if (document.hidden) {
+    state.audio.context.suspend().catch(() => {});
+    return;
+  }
+  if (state.musicEnabled && state.audio.unlocked) {
+    state.audio.context.resume().then(() => syncBgm(true)).catch(() => {});
+  }
+});
 canvas.addEventListener("pointerdown", handleTap);
 actionButton.addEventListener("pointerdown", handleTap);
 resetButton.addEventListener("click", resetGame);
-playTab.addEventListener("click", () => showView("game"));
-spotTab.addEventListener("click", () => showView("spot"));
-dexTab.addEventListener("click", () => showView("dex"));
-shopTab.addEventListener("click", () => showView("shop"));
+musicToggleButton.addEventListener("click", toggleMusic);
+playTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("game");
+});
+spotTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("spot");
+});
+dexTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("dex");
+});
+shopTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("shop");
+});
 reloadButton.addEventListener("click", reloadLatest);
-startButton.addEventListener("click", () => showView("game"));
-menuSpotButton.addEventListener("click", () => showView("spot"));
+startButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("game");
+});
+menuSpotButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("spot");
+});
 menuReloadButton.addEventListener("click", reloadLatest);
-menuDexButton.addEventListener("click", () => showView("dex"));
-menuShopButton.addEventListener("click", () => showView("shop"));
+menuDexButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("dex");
+});
+menuShopButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("shop");
+});
 fullResetButton.addEventListener("click", fullResetProgress);
 closeDexButton.addEventListener("click", () => showView("game"));
 closeShopButton.addEventListener("click", () => showView("game"));
@@ -1504,5 +1740,6 @@ closeSpotButton.addEventListener("click", () => showView("game"));
 
 resizeCanvas();
 resetGame();
+updateMusicButton();
 showView("menu");
 requestAnimationFrame(loop);
