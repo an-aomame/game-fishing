@@ -15,7 +15,7 @@ const menuDexButton = document.querySelector("#menuDexButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const dexList = document.querySelector("#dexList");
 
-const GAME_VERSION = "v0.6.0";
+const GAME_VERSION = "v0.6.1";
 const COLLECTION_KEY = "tapFishingCollection";
 
 const fishTypes = [
@@ -136,7 +136,7 @@ function randomFishType() {
 }
 
 function makeAmbientFish() {
-  state.ambientFish = Array.from({ length: 7 }, (_, index) => makeShadow(index));
+  state.ambientFish = Array.from({ length: 2 }, (_, index) => makeShadow(index));
 }
 
 function makeShadow(index) {
@@ -146,12 +146,12 @@ function makeShadow(index) {
   const yMax = state.height - Math.max(118, state.height * 0.22);
   return {
     type,
-    x: direction > 0 ? -type.shadow - index * 120 : state.width + type.shadow + index * 120,
+    x: direction > 0 ? -type.shadow - index * 260 : state.width + type.shadow + index * 260,
     y: yMin + Math.random() * Math.max(50, yMax - yMin),
     direction,
     speed: type.speed * (0.55 + Math.random() * 0.35),
     wobble: Math.random() * Math.PI * 2,
-    alpha: 0.24 + Math.random() * 0.12,
+    alpha: 0.12 + Math.random() * 0.08,
   };
 }
 
@@ -629,7 +629,7 @@ function drawRipples() {
 
 function drawRod() {
   const gripX = state.width * 0.5;
-  const gripY = state.height + 26;
+  const gripY = state.height + 58;
   const tipX = state.bobber.visible ? state.bobber.x : state.width * 0.5 + state.width * 0.05;
   const tipY = state.bobber.visible ? state.bobber.y - 12 : state.waterLine + state.height * 0.08;
   const controlX = state.width * 0.5 + Math.min(120, state.width * 0.18);
@@ -637,7 +637,7 @@ function drawRod() {
 
   ctx.strokeStyle = "#5a3b28";
   ctx.lineCap = "round";
-  ctx.lineWidth = Math.max(9, state.width * 0.018);
+  ctx.lineWidth = Math.max(7, state.width * 0.014);
   ctx.beginPath();
   ctx.moveTo(gripX, gripY);
   ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
@@ -652,31 +652,10 @@ function drawRod() {
 }
 
 function drawForeground() {
-  const handY = state.height - 42;
-  const handSize = Math.min(72, Math.max(42, state.width * 0.13));
-  const leftX = state.width * 0.5 - handSize * 0.72;
-  const rightX = state.width * 0.5 + handSize * 0.72;
-
-  ctx.fillStyle = "rgba(4, 24, 38, 0.18)";
+  ctx.fillStyle = "rgba(4, 24, 38, 0.12)";
   ctx.beginPath();
-  ctx.ellipse(state.width * 0.5, state.height + 8, state.width * 0.38, 44, 0, 0, Math.PI * 2);
+  ctx.ellipse(state.width * 0.5, state.height + 18, state.width * 0.34, 30, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.fillStyle = "#f0b27a";
-  ctx.beginPath();
-  ctx.ellipse(leftX, handY, handSize * 0.48, handSize * 0.34, -0.38, 0, Math.PI * 2);
-  ctx.ellipse(rightX, handY - 4, handSize * 0.48, handSize * 0.34, 0.38, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#263b4d";
-  ctx.fillRect(state.width * 0.5 - handSize * 0.36, handY - 18, handSize * 0.72, handSize * 0.6);
-
-  ctx.strokeStyle = "rgba(255,255,255,0.18)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(0, state.height - 18);
-  ctx.quadraticCurveTo(state.width * 0.5, state.height - 42, state.width, state.height - 18);
-  ctx.stroke();
 }
 
 function loop(time) {
