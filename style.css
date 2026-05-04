@@ -63,6 +63,7 @@ button {
 }
 
 .hud {
+  gap: 10px;
   justify-content: space-between;
   min-height: 64px;
   padding: 10px 12px;
@@ -146,16 +147,86 @@ button {
 }
 
 @media (max-width: 620px) {
+  body {
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
   .game-shell {
-    height: calc(100dvh - 24px);
+    gap: 8px;
+    height: calc(100dvh - 16px);
+  }
+
+  .hud {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 0.9fr) 42px;
+    min-height: 54px;
+    padding: 8px;
+  }
+
+  .hud div,
+  .hud .version {
+    min-width: 0;
+  }
+
+  .label {
+    font-size: 10px;
+  }
+
+  .hud strong {
+    font-size: 24px;
+  }
+
+  .hud .version strong {
+    font-size: 14px;
+  }
+
+  #resetButton {
+    align-self: center;
+    font-size: 22px;
+    height: 42px;
+    width: 42px;
   }
 
   .status {
-    align-items: stretch;
-    flex-direction: column;
+    gap: 8px;
+    min-height: 62px;
+    padding: 8px;
+  }
+
+  .status p {
+    font-size: 16px;
   }
 
   #actionButton {
-    width: 100%;
+    font-size: 16px;
+    min-height: 46px;
+    min-width: 92px;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .hud {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(62px, 0.86fr) 38px;
+  }
+
+  .hud strong {
+    font-size: 21px;
+  }
+
+  .hud .version strong {
+    font-size: 12px;
+  }
+
+  #resetButton {
+    height: 38px;
+    width: 38px;
+  }
+
+  .status p,
+  #actionButton {
+    font-size: 15px;
   }
 }

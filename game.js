@@ -7,7 +7,7 @@ const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 
-const GAME_VERSION = "v0.3.1";
+const GAME_VERSION = "v0.3.2";
 
 const fishTypes = [
   { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92 },
