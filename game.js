@@ -9,10 +9,12 @@ const versionEl = document.querySelector("#version");
 const playTab = document.querySelector("#playTab");
 const dexTab = document.querySelector("#dexTab");
 const shopTab = document.querySelector("#shopTab");
+const reloadButton = document.querySelector("#reloadButton");
 const menuScreen = document.querySelector("#menuScreen");
 const dexScreen = document.querySelector("#dexScreen");
 const shopScreen = document.querySelector("#shopScreen");
 const startButton = document.querySelector("#startButton");
+const menuReloadButton = document.querySelector("#menuReloadButton");
 const menuDexButton = document.querySelector("#menuDexButton");
 const menuShopButton = document.querySelector("#menuShopButton");
 const closeDexButton = document.querySelector("#closeDexButton");
@@ -21,7 +23,7 @@ const dexList = document.querySelector("#dexList");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 
-const GAME_VERSION = "v0.9.2";
+const GAME_VERSION = "v0.9.3";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 
@@ -195,6 +197,12 @@ function loadEconomy() {
 
 function saveEconomy() {
   localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel }));
+}
+
+function reloadLatest() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("refresh", Date.now().toString());
+  window.location.replace(url.toString());
 }
 
 function loadCollection() {
@@ -938,7 +946,9 @@ resetButton.addEventListener("click", resetGame);
 playTab.addEventListener("click", () => showView("game"));
 dexTab.addEventListener("click", () => showView("dex"));
 shopTab.addEventListener("click", () => showView("shop"));
+reloadButton.addEventListener("click", reloadLatest);
 startButton.addEventListener("click", () => showView("game"));
+menuReloadButton.addEventListener("click", reloadLatest);
 menuDexButton.addEventListener("click", () => showView("dex"));
 menuShopButton.addEventListener("click", () => showView("shop"));
 closeDexButton.addEventListener("click", () => showView("game"));
