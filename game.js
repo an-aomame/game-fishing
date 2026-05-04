@@ -760,7 +760,7 @@ function renderDex() {
       const sizeComplete = count ? isSizeComplete(type.name) : false;
       const card = document.createElement("button");
       card.type = "button";
-      card.className = `dex-card${count ? "" : " is-locked"}`;
+      card.className = `dex-card rarity-card-${type.rarity.toLowerCase()}${count ? "" : " is-locked"}`;
 
       const art = document.createElement("div");
       art.className = "dex-art";

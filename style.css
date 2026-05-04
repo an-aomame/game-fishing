@@ -346,6 +346,37 @@ button {
   transform: translateY(1px);
 }
 
+.dex-card.rarity-card-ssr {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(246, 228, 255, 0.9) 52%, rgba(233, 214, 255, 0.94));
+  border-color: rgba(196, 77, 242, 0.42);
+  box-shadow: 0 10px 26px rgba(157, 64, 201, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.dex-card.rarity-card-ssr .dex-art {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.95), rgba(247, 214, 255, 0.88) 42%, rgba(196, 77, 242, 0.2) 100%);
+  border: 1px solid rgba(196, 77, 242, 0.16);
+}
+
+.dex-card.rarity-card-ssr .dex-name {
+  color: #5b2e7a;
+}
+
+.dex-card.rarity-card-ssr .dex-meta {
+  color: #7e5a98;
+}
+
+.dex-card.rarity-card-ssr .dex-complete {
+  border-color: rgba(196, 77, 242, 0.2);
+}
+
+.dex-card.rarity-card-ssr .dex-size.is-caught {
+  background: #b04ae4;
+  border-color: rgba(109, 34, 151, 0.42);
+  box-shadow: inset 0 -2px 0 rgba(109, 34, 151, 0.24);
+}
+
 .shop-card {
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid var(--line);
