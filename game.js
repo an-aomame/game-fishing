@@ -8,21 +8,35 @@ const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 const playTab = document.querySelector("#playTab");
 const dexTab = document.querySelector("#dexTab");
+const shopTab = document.querySelector("#shopTab");
 const menuScreen = document.querySelector("#menuScreen");
 const dexScreen = document.querySelector("#dexScreen");
+const shopScreen = document.querySelector("#shopScreen");
 const startButton = document.querySelector("#startButton");
 const menuDexButton = document.querySelector("#menuDexButton");
+const menuShopButton = document.querySelector("#menuShopButton");
 const closeDexButton = document.querySelector("#closeDexButton");
+const closeShopButton = document.querySelector("#closeShopButton");
 const dexList = document.querySelector("#dexList");
+const shopList = document.querySelector("#shopList");
+const shopMoney = document.querySelector("#shopMoney");
 
-const GAME_VERSION = "v0.8.0";
+const GAME_VERSION = "v0.9.0";
 const COLLECTION_KEY = "tapFishingCollection";
+const ECONOMY_KEY = "tapFishingEconomy";
 
 const rarityStyles = {
   C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
   R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
   SR: { label: "SR", color: "#d68a18", glow: "rgba(255, 205, 84, 0.74)", particles: 28 },
 };
+
+const rodUpgrades = [
+  { name: "竹の竿", cost: 0, biteBonus: 0, rareBonus: 0 },
+  { name: "しなやかな竿", cost: 160, biteBonus: 0.1, rareBonus: 0.12 },
+  { name: "銀の竿", cost: 420, biteBonus: 0.18, rareBonus: 0.28 },
+  { name: "金の竿", cost: 900, biteBonus: 0.28, rareBonus: 0.5 },
+];
 
 const fishTypes = [
   {
@@ -126,6 +140,8 @@ const state = {
   view: "menu",
   score: 0,
   caughtCount: 0,
+  money: loadEconomy().money,
+  rodLevel: loadEconomy().rodLevel,
   running: true,
   lastTime: 0,
   targetFish: null,
@@ -137,6 +153,22 @@ const state = {
   ripples: [],
   collection: loadCollection(),
 };
+
+function loadEconomy() {
+  try {
+    const economy = JSON.parse(localStorage.getItem(ECONOMY_KEY)) || {};
+    return {
+      money: Number.isFinite(economy.money) ? economy.money : 0,
+      rodLevel: Number.isFinite(economy.rodLevel) ? economy.rodLevel : 0,
+    };
+  } catch {
+    return { money: 0, rodLevel: 0 };
+  }
+}
+
+function saveEconomy() {
+  localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel }));
+}
 
 function loadCollection() {
   try {
@@ -154,11 +186,16 @@ function showView(view) {
   state.view = view;
   menuScreen.classList.toggle("is-hidden", view !== "menu");
   dexScreen.classList.toggle("is-hidden", view !== "dex");
+  shopScreen.classList.toggle("is-hidden", view !== "shop");
   playTab.classList.toggle("is-active", view === "game");
   dexTab.classList.toggle("is-active", view === "dex");
+  shopTab.classList.toggle("is-active", view === "shop");
 
   if (view === "dex") {
     renderDex();
+  }
+  if (view === "shop") {
+    renderShop();
   }
 }
 
@@ -183,17 +220,26 @@ function positionBobber() {
 }
 
 function randomFishType() {
-  const totalWeight = fishTypes.reduce((sum, type) => sum + type.catchWeight, 0);
+  const rod = rodUpgrades[state.rodLevel];
+  const weightedTypes = fishTypes.map((type) => {
+    const rarityBoost = type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
+    return { type, weight: type.catchWeight * (1 + rarityBoost) };
+  });
+  const totalWeight = weightedTypes.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * totalWeight;
 
-  for (const type of fishTypes) {
-    roll -= type.catchWeight;
+  for (const item of weightedTypes) {
+    roll -= item.weight;
     if (roll <= 0) {
-      return type;
+      return item.type;
     }
   }
 
   return fishTypes[0];
+}
+
+function getBiteWindow(type) {
+  return type.biteWindow + rodUpgrades[state.rodLevel].biteBonus;
 }
 
 function makeAmbientFish() {
@@ -251,7 +297,7 @@ function resetGame() {
 }
 
 function updateHud() {
-  scoreEl.textContent = String(state.score);
+  scoreEl.textContent = `${state.money}`;
   caughtEl.textContent = String(state.caughtCount);
   versionEl.textContent = GAME_VERSION;
 }
@@ -294,6 +340,55 @@ function renderDex() {
       return card;
     })
   );
+}
+
+function renderShop() {
+  shopMoney.textContent = `${state.money}円`;
+  shopList.replaceChildren(
+    ...rodUpgrades.map((rod, index) => {
+      const owned = index <= state.rodLevel;
+      const next = index === state.rodLevel + 1;
+      const affordable = state.money >= rod.cost;
+      const card = document.createElement("article");
+      card.className = "shop-card";
+
+      const info = document.createElement("div");
+      const title = document.createElement("h3");
+      title.textContent = rod.name;
+      const detail = document.createElement("p");
+      const rareText = Math.round(rod.rareBonus * 100);
+      const biteText = Math.round(rod.biteBonus * 100) / 100;
+      detail.textContent = owned
+        ? index === state.rodLevel
+          ? `装備中 / 反応猶予 +${biteText}秒 / レア補正 +${rareText}%`
+          : "購入済み"
+        : `反応猶予 +${biteText}秒 / レア補正 +${rareText}%`;
+      info.append(title, detail);
+
+      const button = document.createElement("button");
+      button.className = "buy-button";
+      button.type = "button";
+      button.disabled = !next || !affordable;
+      button.textContent = owned ? "所持" : `${rod.cost}円`;
+      button.addEventListener("click", () => buyRod(index));
+
+      card.append(info, button);
+      return card;
+    })
+  );
+}
+
+function buyRod(index) {
+  const rod = rodUpgrades[index];
+  if (index !== state.rodLevel + 1 || state.money < rod.cost) {
+    return;
+  }
+
+  state.money -= rod.cost;
+  state.rodLevel = index;
+  saveEconomy();
+  updateHud();
+  renderShop();
 }
 
 function setMessage(text, buttonText) {
@@ -347,10 +442,13 @@ function castBobber() {
 
 function catchFish() {
   const fish = state.targetFish;
+  const salePrice = fish.type.points;
   state.score += fish.type.points;
   state.caughtCount += 1;
+  state.money += salePrice;
   state.collection[fish.type.name] = (state.collection[fish.type.name] || 0) + 1;
   saveCollection();
+  saveEconomy();
   state.phase = "showcase";
   state.showcaseTimer = 1.8;
   state.showcaseFish = fish.type;
@@ -358,7 +456,7 @@ function catchFish() {
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  setMessage(`${fish.type.name}を釣った! +${fish.type.points}`, "次を投げる");
+  setMessage(`${fish.type.name}を売った! +${salePrice}円`, "次を投げる");
 }
 
 function missFish(text) {
@@ -404,7 +502,7 @@ function updateFishing(delta) {
     state.bobber.y = state.bobber.baseY + Math.sin(performance.now() * 0.04) * 8;
     if (state.phaseTimer <= 0) {
       state.phase = "bite";
-      state.biteTimer = state.targetFish.type.biteWindow;
+      state.biteTimer = getBiteWindow(state.targetFish.type);
       state.bobber.sunk = true;
       state.bobber.y = state.bobber.baseY + 32;
       state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 12, alpha: 1 });
@@ -700,7 +798,7 @@ function drawShowcase() {
   ctx.fillText(state.showcaseFish.name, state.width * 0.5, y + size * 1.18);
   ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(`+${state.showcaseFish.points}`, state.width * 0.5, y + size * 1.48);
+  ctx.fillText(`+${state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
   ctx.restore();
 }
 
@@ -790,9 +888,12 @@ actionButton.addEventListener("pointerdown", handleTap);
 resetButton.addEventListener("click", resetGame);
 playTab.addEventListener("click", () => showView("game"));
 dexTab.addEventListener("click", () => showView("dex"));
+shopTab.addEventListener("click", () => showView("shop"));
 startButton.addEventListener("click", () => showView("game"));
 menuDexButton.addEventListener("click", () => showView("dex"));
+menuShopButton.addEventListener("click", () => showView("shop"));
 closeDexButton.addEventListener("click", () => showView("game"));
+closeShopButton.addEventListener("click", () => showView("game"));
 
 resizeCanvas();
 resetGame();

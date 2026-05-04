@@ -10,7 +10,7 @@
     <main class="game-shell">
       <section class="hud" aria-label="ゲーム情報">
         <div>
-          <span class="label">SCORE</span>
+          <span class="label">MONEY</span>
           <strong id="score">0</strong>
         </div>
         <div>
@@ -34,12 +34,14 @@
       <nav class="menu-bar" aria-label="メニュー">
         <button id="playTab" class="tab-button is-active" type="button">釣る</button>
         <button id="dexTab" class="tab-button" type="button">図鑑</button>
+        <button id="shopTab" class="tab-button" type="button">店</button>
       </nav>
 
       <section id="menuScreen" class="screen" aria-label="メニュー画面">
         <div class="menu-panel">
           <h1>Tap Fishing</h1>
           <button id="startButton" class="primary-button" type="button">釣りを始める</button>
+          <button id="menuShopButton" class="secondary-button" type="button">店</button>
           <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
         </div>
       </section>
@@ -51,6 +53,19 @@
             <button id="closeDexButton" type="button">戻る</button>
           </header>
           <div id="dexList" class="dex-list"></div>
+        </div>
+      </section>
+
+      <section id="shopScreen" class="screen is-hidden" aria-label="ショップ">
+        <div class="shop-panel">
+          <header class="shop-header">
+            <div>
+              <h2>店</h2>
+              <p id="shopMoney">0円</p>
+            </div>
+            <button id="closeShopButton" type="button">戻る</button>
+          </header>
+          <div id="shopList" class="shop-list"></div>
         </div>
       </section>
     </main>

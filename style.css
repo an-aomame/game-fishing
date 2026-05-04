@@ -158,7 +158,9 @@ button {
 .tab-button,
 .primary-button,
 .secondary-button,
-.dex-header button {
+.dex-header button,
+.shop-header button,
+.buy-button {
   border-radius: 8px;
   font-weight: 900;
 }
@@ -189,7 +191,8 @@ button {
 }
 
 .menu-panel,
-.dex-panel {
+.dex-panel,
+.shop-panel {
   width: min(100%, 680px);
 }
 
@@ -217,7 +220,8 @@ button {
   color: var(--ink);
 }
 
-.dex-panel {
+.dex-panel,
+.shop-panel {
   display: grid;
   gap: 12px;
   grid-template-rows: auto minmax(0, 1fr);
@@ -226,32 +230,50 @@ button {
   min-height: 0;
 }
 
-.dex-header {
+.dex-header,
+.shop-header {
   align-items: center;
   display: flex;
   justify-content: space-between;
 }
 
-.dex-header h2 {
+.dex-header h2,
+.shop-header h2 {
   font-size: clamp(28px, 6vw, 48px);
   line-height: 1;
   margin: 0;
 }
 
-.dex-header button {
+.shop-header p {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 900;
+  margin: 6px 0 0;
+}
+
+.dex-header button,
+.shop-header button {
   min-height: 42px;
   min-width: 76px;
 }
 
-.dex-list {
+.dex-list,
+.shop-list {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   padding-right: 2px;
   touch-action: pan-y;
+}
+
+.dex-list {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+}
+
+.shop-list {
+  grid-template-columns: 1fr;
 }
 
 .dex-card {
@@ -262,6 +284,44 @@ button {
   gap: 8px;
   min-height: 172px;
   padding: 10px;
+}
+
+.shop-card {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.shop-card h3 {
+  font-size: 20px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.shop-card p {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 4px 0 0;
+}
+
+.buy-button {
+  align-self: center;
+  background: var(--coral);
+  color: #fff;
+  min-height: 46px;
+  min-width: 112px;
+  padding: 0 14px;
+}
+
+.buy-button:disabled {
+  background: rgba(16, 32, 51, 0.16);
+  color: var(--muted);
 }
 
 .dex-card.is-locked {
@@ -406,6 +466,14 @@ button {
 
   .dex-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shop-card {
+    grid-template-columns: 1fr;
+  }
+
+  .buy-button {
+    width: 100%;
   }
 
   .dex-card {
