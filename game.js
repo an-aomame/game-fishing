@@ -1,20 +1,20 @@
 const canvas = document.querySelector("#gameCanvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.querySelector("#score");
-const timeEl = document.querySelector("#time");
+const caughtEl = document.querySelector("#caught");
 const messageEl = document.querySelector("#message");
 const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 
-const GAME_VERSION = "v0.3.2";
+const GAME_VERSION = "v0.4.0";
 
 const fishTypes = [
-  { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92 },
-  { name: "アジ", points: 20, shadow: 42, speed: 82, biteWindow: 0.82 },
-  { name: "タイ", points: 45, shadow: 58, speed: 68, biteWindow: 0.72 },
-  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62 },
-  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54 },
+  { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92, color: "#dce8ec" },
+  { name: "アジ", points: 20, shadow: 42, speed: 82, biteWindow: 0.82, color: "#87b8d6" },
+  { name: "タイ", points: 45, shadow: 58, speed: 68, biteWindow: 0.72, color: "#f17a73" },
+  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba" },
+  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8" },
 ];
 
 const state = {
@@ -26,14 +26,15 @@ const state = {
   bobber: { x: 0, y: 0, baseY: 0, visible: false, sunk: false },
   phase: "idle",
   score: 0,
-  timeLeft: 60,
+  caughtCount: 0,
   running: true,
   lastTime: 0,
   targetFish: null,
+  showcaseFish: null,
   ambientFish: [],
   phaseTimer: 0,
   biteTimer: 0,
-  catchTimer: 0,
+  showcaseTimer: 0,
   ripples: [],
 };
 
@@ -103,13 +104,14 @@ function makeTargetFish() {
 
 function resetGame() {
   state.score = 0;
-  state.timeLeft = 60;
+  state.caughtCount = 0;
   state.running = true;
   state.phase = "idle";
   state.phaseTimer = 0;
   state.biteTimer = 0;
-  state.catchTimer = 0;
+  state.showcaseTimer = 0;
   state.targetFish = null;
+  state.showcaseFish = null;
   state.ripples = [];
   state.bobber.visible = false;
   state.bobber.sunk = false;
@@ -121,7 +123,7 @@ function resetGame() {
 
 function updateHud() {
   scoreEl.textContent = String(state.score);
-  timeEl.textContent = String(Math.ceil(state.timeLeft));
+  caughtEl.textContent = String(state.caughtCount);
   versionEl.textContent = GAME_VERSION;
 }
 
@@ -147,6 +149,13 @@ function handleTap(event) {
     return;
   }
 
+  if (state.phase === "showcase") {
+    state.phase = "idle";
+    state.showcaseFish = null;
+    setMessage("タップで浮きを投げよう", "投げる");
+    return;
+  }
+
   if (state.phase === "waiting" || state.phase === "nibble") {
     missFish("早すぎた! 魚が逃げた");
   }
@@ -166,10 +175,13 @@ function castBobber() {
 function catchFish() {
   const fish = state.targetFish;
   state.score += fish.type.points;
-  state.phase = "caught";
-  state.catchTimer = 1.05;
+  state.caughtCount += 1;
+  state.phase = "showcase";
+  state.showcaseTimer = 1.8;
+  state.showcaseFish = fish.type;
   state.targetFish = null;
   state.bobber.sunk = false;
+  state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
   setMessage(`${fish.type.name}を釣った! +${fish.type.points}`, "次を投げる");
 }
@@ -184,19 +196,6 @@ function missFish(text) {
 }
 
 function update(delta) {
-  if (!state.running) {
-    return;
-  }
-
-  state.timeLeft -= delta;
-  if (state.timeLeft <= 0) {
-    state.timeLeft = 0;
-    state.running = false;
-    state.phase = "idle";
-    state.bobber.visible = false;
-    setMessage(`終了 SCORE ${state.score}`, "もう一度");
-  }
-
   updateHud();
   updateFishing(delta);
   updateAmbientFish(delta);
@@ -245,11 +244,11 @@ function updateFishing(delta) {
     }
   }
 
-  if (state.phase === "caught") {
-    state.catchTimer -= delta;
-    if (state.catchTimer <= 0) {
+  if (state.phase === "showcase") {
+    state.showcaseTimer -= delta;
+    if (state.showcaseTimer <= 0) {
       state.phase = "idle";
-      state.bobber.visible = false;
+      state.showcaseFish = null;
       setMessage("タップで浮きを投げよう", "投げる");
     }
   }
@@ -312,6 +311,7 @@ function draw() {
   drawWater();
   drawRod();
   drawForeground();
+  drawShowcase();
 }
 
 function drawSky() {
@@ -349,8 +349,7 @@ function drawWater() {
   drawWaterLines();
   state.ambientFish.forEach((fish) => drawFishShadow(fish, fish.alpha));
   if (state.targetFish) {
-    const alpha = state.phase === "caught" ? 0.42 : 0.5;
-    drawFishShadow(state.targetFish, alpha);
+    drawFishShadow(state.targetFish, 0.5);
   }
   drawBobber();
   drawRipples();
@@ -385,6 +384,75 @@ function drawFishShadow(fish, alpha) {
   ctx.lineTo(-size * 1.18, size * 0.32);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
+}
+
+function drawFishBody(type, x, y, size, direction) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(direction, 1);
+
+  ctx.fillStyle = type.color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size, size * 0.38, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.82, 0);
+  ctx.lineTo(-size * 1.35, -size * 0.38);
+  ctx.lineTo(-size * 1.28, size * 0.38);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.52)";
+  ctx.beginPath();
+  ctx.ellipse(size * 0.12, -size * 0.08, size * 0.34, size * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#102033";
+  ctx.beginPath();
+  ctx.arc(size * 0.58, -size * 0.08, Math.max(4, size * 0.055), 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(16,32,51,0.18)";
+  ctx.lineWidth = Math.max(2, size * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.24, -size * 0.34);
+  ctx.quadraticCurveTo(size * 0.02, 0, -size * 0.24, size * 0.34);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawShowcase() {
+  if (!state.showcaseFish) return;
+  const progress = 1 - state.showcaseTimer / 1.8;
+  const pop = Math.min(1, progress * 4);
+  const fade = Math.min(1, state.showcaseTimer * 4);
+  const size = Math.min(state.width * 0.22, state.height * 0.16, 132) * (0.82 + pop * 0.18);
+  const y = state.height * 0.49 + Math.sin(progress * Math.PI) * -18;
+
+  ctx.save();
+  ctx.globalAlpha = 0.58 * fade;
+  ctx.fillStyle = "#071d2a";
+  ctx.fillRect(0, 0, state.width, state.height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.beginPath();
+  ctx.ellipse(state.width * 0.5, y + size * 0.18, size * 1.88, size * 0.92, 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawFishBody(state.showcaseFish, state.width * 0.5, y, size, 1);
+
+  ctx.fillStyle = "#102033";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `900 ${Math.max(26, Math.min(42, state.width * 0.08))}px ui-rounded, system-ui, sans-serif`;
+  ctx.fillText(state.showcaseFish.name, state.width * 0.5, y + size * 0.84);
+  ctx.font = `800 ${Math.max(16, Math.min(24, state.width * 0.045))}px ui-rounded, system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(16,32,51,0.72)";
+  ctx.fillText(`+${state.showcaseFish.points}`, state.width * 0.5, y + size * 1.16);
   ctx.restore();
 }
 
