@@ -675,6 +675,7 @@ function renderDex() {
     ...fishTypes.map((type) => {
       const entry = getCollectionEntry(type.name);
       const count = entry.count;
+      const sizeComplete = count ? isSizeComplete(type.name) : false;
       const card = document.createElement("article");
       card.className = `dex-card${count ? "" : " is-locked"}`;
 
@@ -697,6 +698,9 @@ function renderDex() {
       name.className = "dex-name";
       name.textContent = count ? type.name : "???";
 
+      const header = document.createElement("div");
+      header.className = "dex-header-row";
+
       const rarity = document.createElement("div");
       rarity.className = `dex-rarity rarity-${type.rarity.toLowerCase()}`;
       rarity.textContent = type.rarity;
@@ -704,6 +708,12 @@ function renderDex() {
       const meta = document.createElement("div");
       meta.className = "dex-meta";
       meta.textContent = count ? `${count}匹 / ${type.points}pt` : "未発見";
+
+      const complete = document.createElement("div");
+      complete.className = `dex-complete${sizeComplete ? " is-done" : ""}${count ? "" : " is-locked"}`;
+      complete.textContent = count ? (sizeComplete ? "COMP" : "SIZE") : "--";
+
+      header.append(rarity, complete);
 
       const sizes = document.createElement("div");
       sizes.className = "dex-sizes";
@@ -715,11 +725,7 @@ function renderDex() {
         sizes.append(chip);
       }
 
-      const complete = document.createElement("div");
-      complete.className = `dex-complete${count && isSizeComplete(type.name) ? " is-done" : ""}`;
-      complete.textContent = count ? (isSizeComplete(type.name) ? "サイズコンプ" : "サイズ収集中") : "サイズ未開放";
-
-      card.append(art, rarity, name, meta, sizes, complete);
+      card.append(art, header, name, meta, sizes);
       return card;
     })
   );

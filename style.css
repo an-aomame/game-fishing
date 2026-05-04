@@ -334,7 +334,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-height: 172px;
   padding: 10px;
 }
@@ -451,8 +451,14 @@ button {
   line-height: 1.1;
 }
 
+.dex-header-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
 .dex-rarity {
-  align-self: start;
   border-radius: 999px;
   color: #fff;
   font-size: 13px;
@@ -486,41 +492,50 @@ button {
 
 .dex-sizes {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .dex-size,
 .dex-complete {
-  border: 1px solid rgba(16, 32, 51, 0.12);
-  border-radius: 999px;
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
-  padding: 6px 0;
   text-align: center;
 }
 
 .dex-size {
-  background: rgba(16, 32, 51, 0.05);
-  color: var(--muted);
+  background: rgba(16, 32, 51, 0.08);
+  border: 1px dashed rgba(16, 32, 51, 0.18);
+  border-radius: 8px;
+  color: rgba(88, 112, 135, 0.68);
+  padding: 8px 0;
 }
 
 .dex-size.is-caught {
-  background: rgba(36, 121, 184, 0.12);
-  border-color: rgba(36, 121, 184, 0.22);
-  color: var(--sea);
+  background: var(--sea);
+  border: 1px solid rgba(10, 68, 111, 0.4);
+  box-shadow: inset 0 -2px 0 rgba(10, 68, 111, 0.18);
+  color: #fff;
 }
 
 .dex-complete {
-  background: rgba(16, 32, 51, 0.05);
+  background: rgba(16, 32, 51, 0.06);
+  border: 1px solid rgba(16, 32, 51, 0.12);
+  border-radius: 999px;
   color: var(--muted);
+  min-width: 52px;
+  padding: 6px 8px;
+}
+
+.dex-complete.is-locked {
+  opacity: 0.6;
 }
 
 .dex-complete.is-done {
-  background: rgba(214, 138, 24, 0.14);
-  border-color: rgba(214, 138, 24, 0.24);
-  color: #b36b00;
+  background: #d68a18;
+  border-color: rgba(162, 101, 0, 0.36);
+  color: #fff;
 }
 
 @media (max-width: 620px) {
