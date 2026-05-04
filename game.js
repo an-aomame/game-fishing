@@ -3,29 +3,36 @@ const ctx = canvas.getContext("2d");
 const scoreEl = document.querySelector("#score");
 const caughtEl = document.querySelector("#caught");
 const messageEl = document.querySelector("#message");
+const missionSummaryEl = document.querySelector("#missionSummary");
 const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 const playTab = document.querySelector("#playTab");
+const spotTab = document.querySelector("#spotTab");
 const dexTab = document.querySelector("#dexTab");
 const shopTab = document.querySelector("#shopTab");
 const reloadButton = document.querySelector("#reloadButton");
 const menuScreen = document.querySelector("#menuScreen");
 const dexScreen = document.querySelector("#dexScreen");
 const shopScreen = document.querySelector("#shopScreen");
+const spotScreen = document.querySelector("#spotScreen");
 const startButton = document.querySelector("#startButton");
+const menuSpotButton = document.querySelector("#menuSpotButton");
 const menuReloadButton = document.querySelector("#menuReloadButton");
 const menuDexButton = document.querySelector("#menuDexButton");
 const menuShopButton = document.querySelector("#menuShopButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const closeShopButton = document.querySelector("#closeShopButton");
+const closeSpotButton = document.querySelector("#closeSpotButton");
 const dexList = document.querySelector("#dexList");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
+const spotList = document.querySelector("#spotList");
 
-const GAME_VERSION = "v0.9.3";
+const GAME_VERSION = "v1.0.0";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
+const MISSION_KEY = "tapFishingMissions";
 
 const rarityStyles = {
   C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
@@ -38,6 +45,46 @@ const rodUpgrades = [
   { name: "しなやかな竿", cost: 160, biteBonus: 0.1, rareBonus: 0.12, rodColor: "#2f6f55", accentColor: "#b7f0c3", glow: 2 },
   { name: "銀の竿", cost: 420, biteBonus: 0.18, rareBonus: 0.28, rodColor: "#7d8f9a", accentColor: "#f3fbff", glow: 5 },
   { name: "金の竿", cost: 900, biteBonus: 0.28, rareBonus: 0.5, rodColor: "#b97818", accentColor: "#ffe070", glow: 8 },
+];
+
+const sizeTiers = [
+  { label: "小", multiplier: 0.8, shadowScale: 0.88, weight: 30 },
+  { label: "中", multiplier: 1, shadowScale: 1, weight: 44 },
+  { label: "大", multiplier: 1.35, shadowScale: 1.18, weight: 20 },
+  { label: "特大", multiplier: 2, shadowScale: 1.42, weight: 6 },
+];
+
+const fishingSpots = [
+  {
+    id: "pier",
+    name: "いつもの桟橋",
+    description: "小さめの魚が多く、安定して稼ぎやすい。",
+    unlockRodLevel: 0,
+    rarityMultiplier: { C: 1.2, R: 0.9, SR: 0.45 },
+    bigBonus: 0,
+  },
+  {
+    id: "reef",
+    name: "沖の岩場",
+    description: "Rの魚と大きめの魚が少し増える。",
+    unlockRodLevel: 1,
+    rarityMultiplier: { C: 0.82, R: 1.28, SR: 0.9 },
+    bigBonus: 0.12,
+  },
+  {
+    id: "deep",
+    name: "深い海",
+    description: "SRと特大が狙えるが、銀の竿以上が必要。",
+    unlockRodLevel: 2,
+    rarityMultiplier: { C: 0.52, R: 1, SR: 1.62 },
+    bigBonus: 0.28,
+  },
+];
+
+const missionDefs = [
+  { id: "catch5", label: "魚を5匹釣る", target: 5, reward: 90, kind: "count" },
+  { id: "earn300", label: "魚を売って300円稼ぐ", target: 300, reward: 140, kind: "money" },
+  { id: "rare1", label: "R以上の魚を1匹釣る", target: 1, reward: 180, kind: "rare" },
 ];
 
 const fishTypes = [
@@ -171,16 +218,20 @@ const state = {
   caughtCount: 0,
   money: loadEconomy().money,
   rodLevel: loadEconomy().rodLevel,
+  spotId: loadEconomy().spotId,
   running: true,
   lastTime: 0,
   targetFish: null,
   showcaseFish: null,
+  showcaseSize: null,
+  showcasePrice: 0,
   ambientFish: [],
   phaseTimer: 0,
   biteTimer: 0,
   showcaseTimer: 0,
   ripples: [],
   collection: loadCollection(),
+  missions: loadMissions(),
 };
 
 function loadEconomy() {
@@ -189,14 +240,15 @@ function loadEconomy() {
     return {
       money: Number.isFinite(economy.money) ? economy.money : 0,
       rodLevel: Number.isFinite(economy.rodLevel) ? economy.rodLevel : 0,
+      spotId: fishingSpots.some((spot) => spot.id === economy.spotId) ? economy.spotId : "pier",
     };
   } catch {
-    return { money: 0, rodLevel: 0 };
+    return { money: 0, rodLevel: 0, spotId: "pier" };
   }
 }
 
 function saveEconomy() {
-  localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel }));
+  localStorage.setItem(ECONOMY_KEY, JSON.stringify({ money: state.money, rodLevel: state.rodLevel, spotId: state.spotId }));
 }
 
 function reloadLatest() {
@@ -217,12 +269,30 @@ function saveCollection() {
   localStorage.setItem(COLLECTION_KEY, JSON.stringify(state.collection));
 }
 
+function loadMissions() {
+  try {
+    return JSON.parse(localStorage.getItem(MISSION_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMissions() {
+  localStorage.setItem(MISSION_KEY, JSON.stringify(state.missions));
+}
+
+function getCurrentSpot() {
+  return fishingSpots.find((spot) => spot.id === state.spotId) || fishingSpots[0];
+}
+
 function showView(view) {
   state.view = view;
   menuScreen.classList.toggle("is-hidden", view !== "menu");
   dexScreen.classList.toggle("is-hidden", view !== "dex");
   shopScreen.classList.toggle("is-hidden", view !== "shop");
+  spotScreen.classList.toggle("is-hidden", view !== "spot");
   playTab.classList.toggle("is-active", view === "game");
+  spotTab.classList.toggle("is-active", view === "spot");
   dexTab.classList.toggle("is-active", view === "dex");
   shopTab.classList.toggle("is-active", view === "shop");
 
@@ -231,6 +301,9 @@ function showView(view) {
   }
   if (view === "shop") {
     renderShop();
+  }
+  if (view === "spot") {
+    renderSpots();
   }
 }
 
@@ -256,11 +329,12 @@ function positionBobber() {
 
 function randomFishType() {
   const rod = rodUpgrades[state.rodLevel];
+  const spot = getCurrentSpot();
   const weightedTypes = fishTypes.map((type) => {
     const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
     const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
     const rarityBoost = type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
-    return { type, weight: type.catchWeight * difficultyPenalty * (1 + rarityBoost) };
+    return { type, weight: type.catchWeight * difficultyPenalty * spot.rarityMultiplier[type.rarity] * (1 + rarityBoost) };
   });
   const totalWeight = weightedTypes.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * totalWeight;
@@ -279,6 +353,25 @@ function getBiteWindow(type) {
   const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
   const difficultyPenalty = difficultyGap * 0.14;
   return Math.max(0.24, type.biteWindow + rodUpgrades[state.rodLevel].biteBonus - difficultyPenalty);
+}
+
+function randomFishSize() {
+  const spot = getCurrentSpot();
+  const weightedSizes = sizeTiers.map((tier, index) => {
+    const bigBoost = index >= 2 ? 1 + spot.bigBonus * (index === 3 ? 1.8 : 1) : 1;
+    return { tier, weight: tier.weight * bigBoost };
+  });
+  const totalWeight = weightedSizes.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (const item of weightedSizes) {
+    roll -= item.weight;
+    if (roll <= 0) {
+      return item.tier;
+    }
+  }
+
+  return sizeTiers[1];
 }
 
 function makeAmbientFish() {
@@ -303,10 +396,12 @@ function makeShadow(index) {
 
 function makeTargetFish() {
   const type = randomFishType();
+  const size = randomFishSize();
   const side = Math.random() > 0.5 ? -1 : 1;
   const startX = state.bobber.x + side * Math.max(state.width * 0.3, 180);
   return {
     type,
+    size,
     x: startX,
     y: state.bobber.baseY + 62 + Math.random() * 42,
     targetX: state.bobber.x + (Math.random() - 0.5) * 24,
@@ -326,12 +421,15 @@ function resetGame() {
   state.showcaseTimer = 0;
   state.targetFish = null;
   state.showcaseFish = null;
+  state.showcaseSize = null;
+  state.showcasePrice = 0;
   state.ripples = [];
   state.bobber.visible = false;
   state.bobber.sunk = false;
   positionBobber();
   makeAmbientFish();
   updateHud();
+  updateMissionSummary();
   setMessage("タップで浮きを投げよう", "投げる");
 }
 
@@ -417,6 +515,94 @@ function renderShop() {
   );
 }
 
+function renderSpots() {
+  spotList.replaceChildren(
+    ...fishingSpots.map((spot) => {
+      const selected = spot.id === state.spotId;
+      const locked = state.rodLevel < spot.unlockRodLevel;
+      const card = document.createElement("article");
+      card.className = "spot-card";
+
+      const info = document.createElement("div");
+      const title = document.createElement("h3");
+      title.textContent = spot.name;
+      const detail = document.createElement("p");
+      detail.textContent = locked ? `${rodUpgrades[spot.unlockRodLevel].name}が必要` : spot.description;
+      info.append(title, detail);
+
+      const button = document.createElement("button");
+      button.className = "spot-button";
+      button.type = "button";
+      button.disabled = locked || selected;
+      button.textContent = selected ? "選択中" : locked ? "未開放" : "行く";
+      button.addEventListener("click", () => selectSpot(spot.id));
+
+      card.append(info, button);
+      return card;
+    })
+  );
+}
+
+function selectSpot(spotId) {
+  const spot = fishingSpots.find((item) => item.id === spotId);
+  if (!spot || state.rodLevel < spot.unlockRodLevel) {
+    return;
+  }
+
+  state.spotId = spotId;
+  saveEconomy();
+  makeAmbientFish();
+  renderSpots();
+  setMessage(`${spot.name}に移動した`, "投げる");
+}
+
+function getMissionProgress(def) {
+  return state.missions[def.id]?.progress || 0;
+}
+
+function updateMissionSummary() {
+  const openMission = missionDefs.find((def) => !state.missions[def.id]?.completed);
+  if (!openMission) {
+    missionSummaryEl.textContent = "ミッション全達成";
+    return;
+  }
+
+  const progress = Math.min(openMission.target, getMissionProgress(openMission));
+  missionSummaryEl.textContent = `ミッション: ${openMission.label} ${progress}/${openMission.target}`;
+}
+
+function updateMissions(type, salePrice) {
+  let rewardTotal = 0;
+  for (const def of missionDefs) {
+    const mission = state.missions[def.id] || { progress: 0, completed: false };
+    if (mission.completed) continue;
+
+    if (def.kind === "count") {
+      mission.progress += 1;
+    }
+    if (def.kind === "money") {
+      mission.progress += salePrice;
+    }
+    if (def.kind === "rare" && type.rarity !== "C") {
+      mission.progress += 1;
+    }
+
+    if (mission.progress >= def.target) {
+      mission.progress = def.target;
+      mission.completed = true;
+      state.money += def.reward;
+      rewardTotal += def.reward;
+    }
+
+    state.missions[def.id] = mission;
+  }
+
+  saveMissions();
+  saveEconomy();
+  updateMissionSummary();
+  return rewardTotal;
+}
+
 function buyRod(index) {
   const rod = rodUpgrades[index];
   if (index !== state.rodLevel + 1 || state.money < rod.cost) {
@@ -459,6 +645,8 @@ function handleTap(event) {
   if (state.phase === "showcase") {
     state.phase = "idle";
     state.showcaseFish = null;
+    state.showcaseSize = null;
+    state.showcasePrice = 0;
     setMessage("タップで浮きを投げよう", "投げる");
     return;
   }
@@ -481,21 +669,25 @@ function castBobber() {
 
 function catchFish() {
   const fish = state.targetFish;
-  const salePrice = fish.type.points;
+  const salePrice = Math.round(fish.type.points * fish.size.multiplier);
   state.score += fish.type.points;
   state.caughtCount += 1;
   state.money += salePrice;
   state.collection[fish.type.name] = (state.collection[fish.type.name] || 0) + 1;
+  const missionReward = updateMissions(fish.type, salePrice);
   saveCollection();
   saveEconomy();
   state.phase = "showcase";
   state.showcaseTimer = 1.8;
   state.showcaseFish = fish.type;
+  state.showcaseSize = fish.size;
+  state.showcasePrice = salePrice;
   state.targetFish = null;
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  setMessage(`${fish.type.name}を売った! +${salePrice}円`, "次を投げる");
+  const rewardText = missionReward ? ` / ミッション +${missionReward}円` : "";
+  setMessage(`${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
 }
 
 function missFish(text) {
@@ -561,6 +753,8 @@ function updateFishing(delta) {
     if (state.showcaseTimer <= 0) {
       state.phase = "idle";
       state.showcaseFish = null;
+      state.showcaseSize = null;
+      state.showcasePrice = 0;
       setMessage("タップで浮きを投げよう", "投げる");
     }
   }
@@ -691,7 +885,7 @@ function drawWaterLines() {
 }
 
 function drawFishShadow(fish, alpha) {
-  const size = fish.type.shadow;
+  const size = fish.type.shadow * (fish.size?.shadowScale || 1);
   ctx.save();
   ctx.translate(fish.x, fish.y);
   ctx.scale(fish.direction, 1);
@@ -790,10 +984,11 @@ function fillRoundedRect(x, y, width, height, radius) {
 function drawShowcase() {
   if (!state.showcaseFish) return;
   const style = rarityStyles[state.showcaseFish.rarity];
+  const sizeInfo = state.showcaseSize || sizeTiers[1];
   const progress = 1 - state.showcaseTimer / 1.8;
   const pop = Math.min(1, progress * 4);
   const fade = Math.min(1, state.showcaseTimer * 4);
-  const size = Math.min(state.width * 0.34, state.height * 0.23, 188) * (0.8 + pop * 0.2);
+  const size = Math.min(state.width * 0.34, state.height * 0.23, 188) * (0.8 + pop * 0.2) * Math.min(1.18, sizeInfo.shadowScale);
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
@@ -834,10 +1029,10 @@ function drawShowcase() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `900 ${Math.max(30, Math.min(50, state.width * 0.095))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(state.showcaseFish.name, state.width * 0.5, y + size * 1.18);
+  ctx.fillText(`${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
   ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(`+${state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
+  ctx.fillText(`+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
   ctx.restore();
 }
 
@@ -944,15 +1139,18 @@ canvas.addEventListener("pointerdown", handleTap);
 actionButton.addEventListener("pointerdown", handleTap);
 resetButton.addEventListener("click", resetGame);
 playTab.addEventListener("click", () => showView("game"));
+spotTab.addEventListener("click", () => showView("spot"));
 dexTab.addEventListener("click", () => showView("dex"));
 shopTab.addEventListener("click", () => showView("shop"));
 reloadButton.addEventListener("click", reloadLatest);
 startButton.addEventListener("click", () => showView("game"));
+menuSpotButton.addEventListener("click", () => showView("spot"));
 menuReloadButton.addEventListener("click", reloadLatest);
 menuDexButton.addEventListener("click", () => showView("dex"));
 menuShopButton.addEventListener("click", () => showView("shop"));
 closeDexButton.addEventListener("click", () => showView("game"));
 closeShopButton.addEventListener("click", () => showView("game"));
+closeSpotButton.addEventListener("click", () => showView("game"));
 
 resizeCanvas();
 resetGame();

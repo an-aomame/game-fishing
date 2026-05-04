@@ -128,6 +128,12 @@ button {
   padding: 10px 12px;
 }
 
+.status div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .status p {
   color: var(--ink);
   font-size: clamp(16px, 2.6vw, 24px);
@@ -135,6 +141,13 @@ button {
   line-height: 1.25;
   margin: 0;
   min-width: 0;
+}
+
+.status small {
+  color: var(--muted);
+  font-size: clamp(12px, 1.8vw, 16px);
+  font-weight: 900;
+  line-height: 1.15;
 }
 
 #actionButton {
@@ -169,7 +182,9 @@ button {
   background: rgba(16, 32, 51, 0.08);
   color: var(--ink);
   flex: 1;
+  font-size: clamp(12px, 2vw, 16px);
   min-height: 38px;
+  min-width: 0;
 }
 
 .tab-button.is-active,
@@ -192,7 +207,8 @@ button {
 
 .menu-panel,
 .dex-panel,
-.shop-panel {
+.shop-panel,
+.spot-panel {
   width: min(100%, 680px);
 }
 
@@ -221,7 +237,8 @@ button {
 }
 
 .dex-panel,
-.shop-panel {
+.shop-panel,
+.spot-panel {
   display: grid;
   gap: 12px;
   grid-template-rows: auto minmax(0, 1fr);
@@ -231,14 +248,16 @@ button {
 }
 
 .dex-header,
-.shop-header {
+.shop-header,
+.spot-header {
   align-items: center;
   display: flex;
   justify-content: space-between;
 }
 
 .dex-header h2,
-.shop-header h2 {
+.shop-header h2,
+.spot-header h2 {
   font-size: clamp(28px, 6vw, 48px);
   line-height: 1;
   margin: 0;
@@ -252,13 +271,15 @@ button {
 }
 
 .dex-header button,
-.shop-header button {
+.shop-header button,
+.spot-header button {
   min-height: 42px;
   min-width: 76px;
 }
 
 .dex-list,
-.shop-list {
+.shop-list,
+.spot-list {
   display: grid;
   gap: 10px;
   min-height: 0;
@@ -273,6 +294,10 @@ button {
 }
 
 .shop-list {
+  grid-template-columns: 1fr;
+}
+
+.spot-list {
   grid-template-columns: 1fr;
 }
 
@@ -294,6 +319,46 @@ button {
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
   padding: 12px;
+}
+
+.spot-card {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.spot-card h3 {
+  font-size: 20px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.spot-card p {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 4px 0 0;
+}
+
+.spot-button {
+  align-self: center;
+  background: var(--ink);
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 900;
+  min-height: 46px;
+  min-width: 96px;
+  padding: 0 14px;
+}
+
+.spot-button:disabled {
+  background: rgba(16, 32, 51, 0.16);
+  color: var(--muted);
 }
 
 .shop-card h3 {
@@ -444,6 +509,10 @@ button {
     font-size: 16px;
   }
 
+  .status small {
+    font-size: 12px;
+  }
+
   #actionButton {
     font-size: 16px;
     min-height: 46px;
@@ -472,7 +541,12 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .buy-button {
+  .spot-card {
+    grid-template-columns: 1fr;
+  }
+
+  .buy-button,
+  .spot-button {
     width: 100%;
   }
 
