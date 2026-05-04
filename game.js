@@ -453,6 +453,15 @@ function playSfx(kind) {
     return;
   }
 
+  if (kind === "catch-ssr") {
+    playSfxTone(now, 460, 0.1, "triangle", 0.05, 620);
+    playSfxTone(now + 0.09, 620, 0.1, "triangle", 0.052, 860);
+    playSfxTone(now + 0.18, 860, 0.14, "sine", 0.05, 1260);
+    playSfxTone(now + 0.31, 1160, 0.22, "sine", 0.05, 1640);
+    playSfxTone(now + 0.31, 580, 0.18, "triangle", 0.032, 900);
+    return;
+  }
+
   if (kind === "miss") {
     playSfxTone(now, 360, 0.12, "sawtooth", 0.03, 150);
   }
@@ -1113,7 +1122,7 @@ function catchFish() {
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  playSfx("catch");
+  playSfx(fish.type.rarity === "SSR" ? "catch-ssr" : "catch");
   const totalBonus = missionReward + rewardTotal;
   const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
   setMessage(`${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
@@ -1445,6 +1454,7 @@ function fillRoundedRect(x, y, width, height, radius) {
 function drawShowcase() {
   if (!state.showcaseFish) return;
   const style = rarityStyles[state.showcaseFish.rarity];
+  const isSsr = state.showcaseFish.rarity === "SSR";
   const sizeInfo = state.showcaseSize || sizeTiers[1];
   const progress = 1 - state.showcaseTimer / 1.8;
   const pop = Math.min(1, progress * 4);
@@ -1453,12 +1463,25 @@ function drawShowcase() {
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = (state.showcaseFish.rarity === "SSR" ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
+  ctx.globalAlpha = (isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();
 
   ctx.save();
+  if (isSsr) {
+    const flash = Math.max(0, 1 - progress * 4.2);
+    if (flash > 0) {
+      ctx.globalAlpha = flash * 0.72;
+      const flashGradient = ctx.createLinearGradient(0, 0, state.width, state.height);
+      flashGradient.addColorStop(0, "rgba(255,255,255,0.98)");
+      flashGradient.addColorStop(0.45, "rgba(242,196,255,0.88)");
+      flashGradient.addColorStop(1, "rgba(118,65,255,0.78)");
+      ctx.fillStyle = flashGradient;
+      ctx.fillRect(0, 0, state.width, state.height);
+    }
+  }
+
   ctx.globalAlpha = fade;
   const glow = ctx.createRadialGradient(state.width * 0.5, y, size * 0.2, state.width * 0.5, y, size * 2.4);
   glow.addColorStop(0, style.glow);
@@ -1470,6 +1493,20 @@ function drawShowcase() {
 
   if (state.showcaseFish.rarity !== "C") {
     drawShowcaseParticles(style, progress, fade, state.width * 0.5, y, size * 1.42);
+  }
+
+  if (isSsr) {
+    ctx.globalAlpha = fade * 0.58;
+    ctx.strokeStyle = "rgba(255,255,255,0.82)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(state.width * 0.18, y - size * 0.58);
+    ctx.lineTo(state.width * 0.82, y + size * 0.62);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(state.width * 0.78, y - size * 0.62);
+    ctx.lineTo(state.width * 0.28, y + size * 0.76);
+    ctx.stroke();
   }
 
   ctx.fillStyle = "rgba(255,255,255,0.92)";

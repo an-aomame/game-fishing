@@ -1,5 +1,5 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v1.9.0",
+  version: "v1.9.1",
   rarityStyles: {
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
     R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
