@@ -1,5 +1,5 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v1.9.2",
+  version: "v2.0.0",
   rarityStyles: {
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
     R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
@@ -136,6 +136,16 @@ window.GAME_CONFIG = Object.freeze({
     { id: "catch5", label: "魚を5匹釣る", target: 5, reward: 90, kind: "count" },
     { id: "earn300", label: "魚を売って300円稼ぐ", target: 300, reward: 140, kind: "money" },
     { id: "rare1", label: "R以上の魚を1匹釣る", target: 1, reward: 180, kind: "rare" },
+    { id: "catch20", label: "魚を20匹釣る", target: 20, reward: 220, kind: "count" },
+    { id: "earn2000", label: "魚を売って2000円稼ぐ", target: 2000, reward: 320, kind: "money" },
+    { id: "deep10", label: "深い海で10匹釣る", target: 10, reward: 340, kind: "spotCount", spotId: "deep" },
+    { id: "big3", label: "特大を3匹釣る", target: 3, reward: 420, kind: "sizeCatch", sizeLabel: "特大" },
+    { id: "sr5", label: "SR以上を5匹釣る", target: 5, reward: 520, kind: "rarityCount", rarity: "SR" },
+    { id: "ssr1", label: "SSRを1匹釣る", target: 1, reward: 900, kind: "rarityCount", rarity: "SSR" },
+    { id: "tuna2", label: "マグロを2匹釣る", target: 2, reward: 680, kind: "fishCount", fishName: "マグロ" },
+    { id: "discover10", label: "図鑑を10種埋める", target: 10, reward: 760, kind: "discovered" },
+    { id: "sizeComp3", label: "サイズコンプを3種達成", target: 3, reward: 980, kind: "sizeComplete" },
+    { id: "legendTriplet", label: "ヌシ・コダマウオ・ネコギョを釣る", target: 3, reward: 1400, kind: "fishSet", fishNames: ["ヌシ", "コダマウオ", "ネコギョ"] },
   ],
   fishTypes: [
     { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92, color: "#dce8ec", image: "assets/fish/001.png", rarity: "C", catchWeight: 32, catchDifficulty: 0, description: "群れで泳ぐ小さな魚じゃ。動きは素直で、釣りの入り口にぴったりじゃな。", recommendedSpot: "pier", sizeHint: "小と中が多く、特大はかなり珍しいぞい。" },

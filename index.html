@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Tap Fishing</title>
-    <link rel="stylesheet" href="style.css?v=1.9.2">
+    <link rel="stylesheet" href="style.css?v=2.0.0">
   </head>
   <body>
     <main class="game-shell">
@@ -40,6 +40,7 @@
 
       <nav class="menu-bar" aria-label="メニュー">
         <button id="playTab" class="tab-button is-active" type="button">釣る</button>
+        <button id="missionTab" class="tab-button" type="button">任務</button>
         <button id="spotTab" class="tab-button" type="button">場所</button>
         <button id="dexTab" class="tab-button" type="button">図鑑</button>
         <button id="shopTab" class="tab-button" type="button">店</button>
@@ -50,11 +51,25 @@
         <div class="menu-panel">
           <h1>Tap Fishing</h1>
           <button id="startButton" class="primary-button" type="button">釣りを始める</button>
+          <button id="menuMissionButton" class="secondary-button" type="button">任務</button>
           <button id="menuSpotButton" class="secondary-button" type="button">釣り場</button>
           <button id="menuReloadButton" class="secondary-button" type="button">最新版を読み込む</button>
           <button id="menuShopButton" class="secondary-button" type="button">店</button>
           <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
           <button id="fullResetButton" class="danger-button" type="button">はじめから</button>
+        </div>
+      </section>
+
+      <section id="missionScreen" class="screen is-hidden" aria-label="ミッション">
+        <div class="mission-panel">
+          <header class="mission-header">
+            <div>
+              <h2>任務</h2>
+              <p id="missionCount">0 / 0 完了</p>
+            </div>
+            <button id="closeMissionButton" type="button">戻る</button>
+          </header>
+          <div id="missionList" class="mission-list"></div>
         </div>
       </section>
 
@@ -126,7 +141,7 @@
       </section>
     </main>
 
-    <script src="game-config.js?v=1.9.2"></script>
-    <script src="game.js?v=1.9.2"></script>
+    <script src="game-config.js?v=2.0.0"></script>
+    <script src="game.js?v=2.0.0"></script>
   </body>
 </html>

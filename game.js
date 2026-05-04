@@ -8,20 +8,24 @@ const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
 const versionEl = document.querySelector("#version");
 const playTab = document.querySelector("#playTab");
+const missionTab = document.querySelector("#missionTab");
 const spotTab = document.querySelector("#spotTab");
 const dexTab = document.querySelector("#dexTab");
 const shopTab = document.querySelector("#shopTab");
 const reloadButton = document.querySelector("#reloadButton");
 const menuScreen = document.querySelector("#menuScreen");
+const missionScreen = document.querySelector("#missionScreen");
 const dexScreen = document.querySelector("#dexScreen");
 const shopScreen = document.querySelector("#shopScreen");
 const spotScreen = document.querySelector("#spotScreen");
 const startButton = document.querySelector("#startButton");
+const menuMissionButton = document.querySelector("#menuMissionButton");
 const menuSpotButton = document.querySelector("#menuSpotButton");
 const menuReloadButton = document.querySelector("#menuReloadButton");
 const menuDexButton = document.querySelector("#menuDexButton");
 const menuShopButton = document.querySelector("#menuShopButton");
 const fullResetButton = document.querySelector("#fullResetButton");
+const closeMissionButton = document.querySelector("#closeMissionButton");
 const closeDexButton = document.querySelector("#closeDexButton");
 const closeDexDetailButton = document.querySelector("#closeDexDetailButton");
 const closeShopButton = document.querySelector("#closeShopButton");
@@ -40,6 +44,8 @@ const dexDetailSizes = document.querySelector("#dexDetailSizes");
 const dexDetailText = document.querySelector("#dexDetailText");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
+const missionCount = document.querySelector("#missionCount");
+const missionList = document.querySelector("#missionList");
 const spotList = document.querySelector("#spotList");
 
 const {
@@ -78,6 +84,19 @@ const rarityRank = {
   SR: 3,
   R: 2,
   C: 1,
+};
+
+const missionKindLabels = {
+  count: "基本",
+  money: "基本",
+  rare: "進行",
+  spotCount: "場所",
+  sizeCatch: "サイズ",
+  rarityCount: "高難度",
+  fishCount: "魚種",
+  discovered: "図鑑",
+  sizeComplete: "図鑑",
+  fishSet: "伝説",
 };
 
 
@@ -579,14 +598,19 @@ function getCurrentTitle() {
 function showView(view) {
   state.view = view;
   menuScreen.classList.toggle("is-hidden", view !== "menu");
+  missionScreen.classList.toggle("is-hidden", view !== "mission");
   dexScreen.classList.toggle("is-hidden", view !== "dex");
   shopScreen.classList.toggle("is-hidden", view !== "shop");
   spotScreen.classList.toggle("is-hidden", view !== "spot");
   playTab.classList.toggle("is-active", view === "game");
+  missionTab.classList.toggle("is-active", view === "mission");
   spotTab.classList.toggle("is-active", view === "spot");
   dexTab.classList.toggle("is-active", view === "dex");
   shopTab.classList.toggle("is-active", view === "shop");
 
+  if (view === "mission") {
+    renderMissions();
+  }
   if (view === "dex") {
     closeDexDetail();
     renderDex();
@@ -921,21 +945,83 @@ function selectSpot(spotId) {
 }
 
 function getMissionProgress(def) {
+  if (def.kind === "discovered") {
+    return fishTypes.reduce((sum, type) => sum + (getCollectionCount(type.name) > 0 ? 1 : 0), 0);
+  }
+
+  if (def.kind === "sizeComplete") {
+    return fishTypes.reduce((sum, type) => sum + (isSizeComplete(type.name) ? 1 : 0), 0);
+  }
+
+  if (def.kind === "fishSet") {
+    return (def.fishNames || []).reduce((sum, name) => sum + (getCollectionCount(name) > 0 ? 1 : 0), 0);
+  }
+
   return state.missions[def.id]?.progress || 0;
+}
+
+function getMissionCardProgress(def) {
+  return Math.min(def.target, getMissionProgress(def));
+}
+
+function getCompletedMissionCount() {
+  return missionDefs.filter((def) => state.missions[def.id]?.completed).length;
+}
+
+function renderMissions() {
+  missionCount.textContent = `${getCompletedMissionCount()} / ${missionDefs.length} 完了`;
+  missionList.replaceChildren(
+    ...missionDefs.map((def) => {
+      const progress = getMissionCardProgress(def);
+      const completed = Boolean(state.missions[def.id]?.completed);
+      const card = document.createElement("article");
+      card.className = `mission-card${completed ? " is-done" : ""}`;
+
+      const head = document.createElement("div");
+      head.className = "mission-card-head";
+
+      const titleWrap = document.createElement("div");
+      const badge = document.createElement("span");
+      badge.className = "mission-kind";
+      badge.textContent = missionKindLabels[def.kind] || "任務";
+      const title = document.createElement("h3");
+      title.textContent = def.label;
+      titleWrap.append(badge, title);
+
+      const reward = document.createElement("div");
+      reward.className = "mission-reward";
+      reward.textContent = `${def.reward}円`;
+
+      head.append(titleWrap, reward);
+
+      const meter = document.createElement("div");
+      meter.className = "mission-meter";
+      const fill = document.createElement("span");
+      fill.style.width = `${Math.max(6, (progress / def.target) * 100)}%`;
+      meter.append(fill);
+
+      const meta = document.createElement("div");
+      meta.className = "mission-meta";
+      meta.textContent = completed ? "達成済み" : `${progress} / ${def.target}`;
+
+      card.append(head, meter, meta);
+      return card;
+    })
+  );
 }
 
 function updateMissionSummary() {
   const openMission = missionDefs.find((def) => !state.missions[def.id]?.completed);
   if (!openMission) {
-    missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / ミッション全達成`;
+    missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / ミッション ${missionDefs.length}件達成`;
     return;
   }
 
-  const progress = Math.min(openMission.target, getMissionProgress(openMission));
-  missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / ${openMission.label} ${progress}/${openMission.target}`;
+  const progress = getMissionCardProgress(openMission);
+  missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / 任務 ${getCompletedMissionCount()}/${missionDefs.length} / ${openMission.label} ${progress}/${openMission.target}`;
 }
 
-function updateMissions(type, salePrice) {
+function updateMissions(type, salePrice, size) {
   let rewardTotal = 0;
   for (const def of missionDefs) {
     const mission = state.missions[def.id] || { progress: 0, completed: false };
@@ -949,6 +1035,27 @@ function updateMissions(type, salePrice) {
     }
     if (def.kind === "rare" && type.rarity !== "C") {
       mission.progress += 1;
+    }
+    if (def.kind === "spotCount" && state.spotId === def.spotId) {
+      mission.progress += 1;
+    }
+    if (def.kind === "sizeCatch" && size?.label === def.sizeLabel) {
+      mission.progress += 1;
+    }
+    if (def.kind === "rarityCount" && (rarityRank[type.rarity] || 0) >= (rarityRank[def.rarity] || 0)) {
+      mission.progress += 1;
+    }
+    if (def.kind === "fishCount" && type.name === def.fishName) {
+      mission.progress += 1;
+    }
+    if (def.kind === "discovered") {
+      mission.progress = fishTypes.reduce((sum, fishType) => sum + (getCollectionCount(fishType.name) > 0 ? 1 : 0), 0);
+    }
+    if (def.kind === "sizeComplete") {
+      mission.progress = fishTypes.reduce((sum, fishType) => sum + (isSizeComplete(fishType.name) ? 1 : 0), 0);
+    }
+    if (def.kind === "fishSet") {
+      mission.progress = (def.fishNames || []).reduce((sum, name) => sum + (getCollectionCount(name) > 0 ? 1 : 0), 0);
     }
 
     if (mission.progress >= def.target) {
@@ -964,6 +1071,9 @@ function updateMissions(type, salePrice) {
   saveMissions();
   saveEconomy();
   updateMissionSummary();
+  if (state.view === "mission") {
+    renderMissions();
+  }
   return rewardTotal;
 }
 
@@ -1108,7 +1218,7 @@ function catchFish() {
     },
   };
   const rewardTotal = updateRewards(fish.type, firstTime);
-  const missionReward = updateMissions(fish.type, salePrice);
+  const missionReward = updateMissions(fish.type, salePrice, fish.size);
   updateTitles();
   updateMissionSummary();
   saveCollection();
@@ -1646,6 +1756,10 @@ document.addEventListener("visibilitychange", () => {
 canvas.addEventListener("pointerdown", handleTap);
 actionButton.addEventListener("pointerdown", handleTap);
 resetButton.addEventListener("click", resetGame);
+missionTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("mission");
+});
 musicToggleButton.addEventListener("click", toggleMusic);
 playTab.addEventListener("click", () => {
   unlockAudio();
@@ -1668,6 +1782,10 @@ startButton.addEventListener("click", () => {
   unlockAudio();
   showView("game");
 });
+menuMissionButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("mission");
+});
 menuSpotButton.addEventListener("click", () => {
   unlockAudio();
   showView("spot");
@@ -1682,6 +1800,7 @@ menuShopButton.addEventListener("click", () => {
   showView("shop");
 });
 fullResetButton.addEventListener("click", fullResetProgress);
+closeMissionButton.addEventListener("click", () => showView("game"));
 closeDexButton.addEventListener("click", () => showView("game"));
 closeDexDetailButton.addEventListener("click", closeDexDetail);
 dexDetail.addEventListener("click", (event) => {

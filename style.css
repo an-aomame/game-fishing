@@ -222,6 +222,7 @@ button {
 
 .menu-panel,
 .dex-panel,
+.mission-panel,
 .shop-panel,
 .spot-panel {
   width: min(100%, 680px);
@@ -258,6 +259,7 @@ button {
 }
 
 .dex-panel,
+.mission-panel,
 .shop-panel,
 .spot-panel {
   display: grid;
@@ -269,6 +271,7 @@ button {
 }
 
 .dex-header,
+.mission-header,
 .shop-header,
 .spot-header {
   align-items: center;
@@ -277,6 +280,7 @@ button {
 }
 
 .dex-header h2,
+.mission-header h2,
 .shop-header h2,
 .spot-header h2 {
   font-size: clamp(28px, 6vw, 48px);
@@ -284,6 +288,7 @@ button {
   margin: 0;
 }
 
+.mission-header p,
 .shop-header p {
   color: var(--muted);
   font-size: 16px;
@@ -292,6 +297,7 @@ button {
 }
 
 .dex-header button,
+.mission-header button,
 .shop-header button,
 .spot-header button {
   min-height: 42px;
@@ -299,6 +305,7 @@ button {
 }
 
 .dex-list,
+.mission-list,
 .shop-list,
 .spot-list {
   display: grid;
@@ -315,6 +322,10 @@ button {
 }
 
 .shop-list {
+  grid-template-columns: 1fr;
+}
+
+.mission-list {
   grid-template-columns: 1fr;
 }
 
@@ -453,6 +464,78 @@ button {
 .buy-button:disabled {
   background: rgba(16, 32, 51, 0.16);
   color: var(--muted);
+}
+
+.mission-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.mission-card.is-done {
+  background: rgba(234, 247, 239, 0.92);
+  border-color: rgba(49, 132, 85, 0.2);
+}
+
+.mission-card-head {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mission-card h3 {
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 6px 0 0;
+}
+
+.mission-kind {
+  background: rgba(16, 32, 51, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.mission-reward {
+  background: var(--ink);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 7px 10px;
+}
+
+.mission-meter {
+  background: rgba(16, 32, 51, 0.08);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.mission-meter span {
+  background: linear-gradient(90deg, #2f8fcb, #6ac0da);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.mission-card.is-done .mission-meter span {
+  background: linear-gradient(90deg, #3a9b62, #8fd69d);
+}
+
+.mission-meta {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .dex-card.is-locked {
@@ -834,6 +917,10 @@ button {
   }
 
   .shop-card {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-card-head {
     grid-template-columns: 1fr;
   }
 
