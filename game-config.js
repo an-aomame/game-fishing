@@ -1,9 +1,10 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v1.8.1",
+  version: "v1.9.0",
   rarityStyles: {
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
     R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
     SR: { label: "SR", color: "#d68a18", glow: "rgba(255, 205, 84, 0.74)", particles: 28 },
+    SSR: { label: "SSR", color: "#c44df2", glow: "rgba(240, 136, 255, 0.82)", particles: 40 },
   },
   rodUpgrades: [
     { id: "bamboo", name: "竹の竿", cost: 0, power: 0, biteBonus: 0, rareBonus: 0, saleBonus: 0, rodColor: "#5a3b28", accentColor: "rgba(245,229,168,0.75)", glow: 0 },
@@ -24,9 +25,9 @@ window.GAME_CONFIG = Object.freeze({
     { id: "pro", name: "プロリール", cost: 620, biteBonus: 0.16, saleBonus: 0.1 },
   ],
   baitUpgrades: [
-    { id: "normal", name: "ふつうのエサ", cost: 0, rarityMultiplier: { C: 1, R: 1, SR: 1 }, fishBonus: {} },
-    { id: "rare", name: "きらめくエサ", cost: 260, rarityMultiplier: { C: 0.82, R: 1.16, SR: 1.45 }, fishBonus: {} },
-    { id: "tuna", name: "大物エサ", cost: 520, rarityMultiplier: { C: 0.72, R: 1, SR: 1.72 }, fishBonus: { "マグロ": 1.6, "ヌシ": 1.7 } },
+    { id: "normal", name: "ふつうのエサ", cost: 0, rarityMultiplier: { C: 1, R: 1, SR: 1, SSR: 1 }, fishBonus: {} },
+    { id: "rare", name: "きらめくエサ", cost: 260, rarityMultiplier: { C: 0.82, R: 1.16, SR: 1.45, SSR: 1.18 }, fishBonus: {} },
+    { id: "tuna", name: "大物エサ", cost: 520, rarityMultiplier: { C: 0.72, R: 1, SR: 1.72, SSR: 1.28 }, fishBonus: { "マグロ": 1.6, "ヌシ": 1.7 } },
   ],
   sizeTiers: [
     { label: "小", multiplier: 0.8, shadowScale: 0.88, weight: 30 },
@@ -40,7 +41,7 @@ window.GAME_CONFIG = Object.freeze({
       name: "いつもの桟橋",
       description: "小さめの魚が多く、安定して稼ぎやすい。",
       unlockRodLevel: 0,
-      rarityMultiplier: { C: 1.2, R: 0.9, SR: 0.45 },
+      rarityMultiplier: { C: 1.2, R: 0.9, SR: 0.45, SSR: 0.18 },
       bigBonus: 0,
       theme: {
         skyTop: "#86d8f0",
@@ -59,7 +60,7 @@ window.GAME_CONFIG = Object.freeze({
       name: "沖の岩場",
       description: "Rの魚と大きめの魚が少し増える。",
       unlockRodLevel: 1,
-      rarityMultiplier: { C: 0.82, R: 1.28, SR: 0.9 },
+      rarityMultiplier: { C: 0.82, R: 1.28, SR: 0.9, SSR: 0.36 },
       bigBonus: 0.12,
       theme: {
         skyTop: "#7bcbea",
@@ -76,9 +77,9 @@ window.GAME_CONFIG = Object.freeze({
     {
       id: "deep",
       name: "深い海",
-      description: "SRと特大が狙えるが、銀の竿以上が必要。",
+      description: "SR以上と特大が狙えるが、銀の竿以上が必要。",
       unlockRodLevel: 2,
-      rarityMultiplier: { C: 0.52, R: 1, SR: 1.62 },
+      rarityMultiplier: { C: 0.52, R: 1, SR: 1.62, SSR: 1.96 },
       bigBonus: 0.28,
       theme: {
         skyTop: "#253b65",
@@ -145,11 +146,11 @@ window.GAME_CONFIG = Object.freeze({
     { name: "カワハギ", points: 65, shadow: 70, speed: 60, biteWindow: 0.66, color: "#167988", image: "assets/fish/004.png", rarity: "R", catchWeight: 13, catchDifficulty: 1, description: "ひらりと方向を変える身軽な魚じゃ。見た目よりも、間の取り方が勝負どころじゃな。", recommendedSpot: "reef", sizeHint: "小から大まで幅広いが、中サイズがいちばん落ち着くのう。" },
     { name: "マンボウ", points: 90, shadow: 88, speed: 42, biteWindow: 0.58, color: "#f7cbd8", image: "assets/fish/005.png", rarity: "SR", catchWeight: 6, catchDifficulty: 2, description: "ゆったり見えて、意外と気まぐれ。大きな魚影のわりに、出会えると少しうれしくなる魚じゃ。", recommendedSpot: "deep", sizeHint: "中でも大きく見えるが、真の狙いは大と特大じゃな。" },
     { name: "ニジイロギョ", points: 150, shadow: 92, speed: 62, biteWindow: 0.5, color: "#ff5eb8", image: "assets/fish/006.png", rarity: "SR", catchWeight: 4, catchDifficulty: 3, description: "光の加減で色が揺れるように見える珍魚じゃ。見つけても、落ち着いて狙わねば逃げるぞい。", recommendedSpot: "deep", sizeHint: "中以上が多く、特大はひときわ華やかな記録になるぞい。" },
-    { name: "ヌシ", points: 180, shadow: 104, speed: 38, biteWindow: 0.46, color: "#347d9f", image: "assets/fish/007.png", rarity: "SR", catchWeight: 3, catchDifficulty: 3, description: "その場の空気まで変える特別な魚影じゃ。釣れたなら、胸を張って自慢してよいぞい。", recommendedSpot: "deep", sizeHint: "大物ぞろいじゃ。特大の記録は、まさに語り草になるじゃろう。" },
+    { name: "ヌシ", points: 220, shadow: 104, speed: 38, biteWindow: 0.44, color: "#347d9f", image: "assets/fish/007.png", rarity: "SSR", catchWeight: 1, catchDifficulty: 3, description: "その場の空気まで変える特別な魚影じゃ。釣れたなら、胸を張って自慢してよいぞい。", recommendedSpot: "deep", sizeHint: "大物ぞろいじゃ。特大の記録は、まさに語り草になるじゃろう。" },
     { name: "ハートフィッシュ", points: 85, shadow: 72, speed: 70, biteWindow: 0.64, color: "#c9f0e8", image: "assets/fish/008.png", rarity: "R", catchWeight: 10, catchDifficulty: 1, description: "愛らしい模様をもつ人気者じゃ。近づき方は素直じゃが、見とれておると機を逃すのう。", recommendedSpot: "pier", sizeHint: "小と中を集めやすい魚じゃ。大になると急に出会いが減るぞい。" },
     { name: "ムーンフィッシュ", points: 140, shadow: 90, speed: 56, biteWindow: 0.52, color: "#6d67b8", image: "assets/fish/009.png", rarity: "SR", catchWeight: 5, catchDifficulty: 2, description: "夜の海を思わせる静かな気配をまとう魚じゃ。落ち着いて待てる者ほど縁があるぞい。", recommendedSpot: "deep", sizeHint: "中から大が中心じゃが、特大はめったに姿を見せぬのう。" },
-    { name: "コダマウオ", points: 165, shadow: 86, speed: 66, biteWindow: 0.48, color: "#d9d7f8", image: "assets/fish/010.png", rarity: "SR", catchWeight: 4, catchDifficulty: 3, description: "魚なのか精霊なのか、博士にも断言できぬ不思議な存在じゃ。見つけたら幸運と思ってよい。", recommendedSpot: "deep", sizeHint: "中以上で現れやすく、特大は本当に気まぐれじゃ。" },
+    { name: "コダマウオ", points: 185, shadow: 86, speed: 66, biteWindow: 0.46, color: "#d9d7f8", image: "assets/fish/010.png", rarity: "SSR", catchWeight: 2, catchDifficulty: 3, description: "魚なのか精霊なのか、博士にも断言できぬ不思議な存在じゃ。見つけたら幸運と思ってよい。", recommendedSpot: "deep", sizeHint: "中以上で現れやすく、特大は本当に気まぐれじゃ。" },
     { name: "タコ", points: 75, shadow: 68, speed: 64, biteWindow: 0.68, color: "#f3a5be", image: "assets/fish/013.png", rarity: "R", catchWeight: 11, catchDifficulty: 1, description: "泳ぎ方が独特で、影の見え方も少し変わっておる。海の変化球として侮れぬ相手じゃ。", recommendedSpot: "reef", sizeHint: "中サイズが集まりやすいが、大も十分狙える手応えがあるぞい。" },
-    { name: "ネコギョ", points: 155, shadow: 94, speed: 54, biteWindow: 0.5, color: "#f3c28d", image: "assets/fish/014.png", rarity: "SR", catchWeight: 4, catchDifficulty: 3, description: "見た者の多くが二度見する珍魚じゃ。魚らしさと猫らしさ、その両方を感じる妙味があるのう。", recommendedSpot: "pier", sizeHint: "小でも存在感があるが、大と特大はとくに記憶に残る釣果じゃ。" },
+    { name: "ネコギョ", points: 190, shadow: 94, speed: 54, biteWindow: 0.46, color: "#f3c28d", image: "assets/fish/014.png", rarity: "SSR", catchWeight: 2, catchDifficulty: 3, description: "見た者の多くが二度見する珍魚じゃ。魚らしさと猫らしさ、その両方を感じる妙味があるのう。", recommendedSpot: "pier", sizeHint: "小でも存在感があるが、大と特大はとくに記憶に残る釣果じゃ。" },
   ],
 });

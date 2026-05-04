@@ -70,8 +70,15 @@ const titleDefs = [
 
 const dexRewardDefs = [
   { id: "allC", label: "Cコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "C").every((type) => getCollectionCount(type.name) > 0) },
-  { id: "firstSR", label: "SR初入手", reward: 360, condition: (type) => type.rarity === "SR" },
+  { id: "firstSR", label: "SR初入手", reward: 360, condition: (type) => type.rarity === "SR" || type.rarity === "SSR" },
 ];
+
+const rarityRank = {
+  SSR: 4,
+  SR: 3,
+  R: 2,
+  C: 1,
+};
 
 
 const fishImages = new Map();
@@ -612,7 +619,8 @@ function randomFishType() {
   const weightedTypes = fishTypes.map((type) => {
     const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
     const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
-    const rarityBoost = type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
+    const rarityBoost =
+      type.rarity === "SSR" ? rod.rareBonus * 1.18 : type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
     return {
       type,
       weight:
@@ -728,8 +736,16 @@ function updateHud() {
 }
 
 function renderDex() {
+  const sortedFishTypes = [...fishTypes].sort((left, right) => {
+    const rarityDiff = (rarityRank[right.rarity] || 0) - (rarityRank[left.rarity] || 0);
+    if (rarityDiff !== 0) return rarityDiff;
+    const pointDiff = right.points - left.points;
+    if (pointDiff !== 0) return pointDiff;
+    return left.name.localeCompare(right.name, "ja");
+  });
+
   dexList.replaceChildren(
-    ...fishTypes.map((type) => {
+    ...sortedFishTypes.map((type) => {
       const entry = getCollectionEntry(type.name);
       const count = entry.count;
       const sizeComplete = count ? isSizeComplete(type.name) : false;
@@ -848,8 +864,8 @@ function describeReel(reel) {
 }
 
 function describeBait(bait) {
-  const sr = Math.round((bait.rarityMultiplier.SR - 1) * 100);
-  return sr ? `SR出現 ${sr > 0 ? "+" : ""}${sr}%` : "標準の出現率";
+  const highRare = Math.round(((bait.rarityMultiplier.SSR || bait.rarityMultiplier.SR) - 1) * 100);
+  return highRare ? `高レア出現 ${highRare > 0 ? "+" : ""}${highRare}%` : "標準の出現率";
 }
 
 function renderSpots() {
@@ -1437,7 +1453,7 @@ function drawShowcase() {
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = (state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
+  ctx.globalAlpha = (state.showcaseFish.rarity === "SSR" ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();

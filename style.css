@@ -491,6 +491,11 @@ button {
   box-shadow: 0 0 18px rgba(255, 205, 84, 0.52);
 }
 
+.rarity-ssr {
+  background: #c44df2;
+  box-shadow: 0 0 20px rgba(240, 136, 255, 0.62);
+}
+
 .dex-meta {
   color: var(--muted);
   font-size: 13px;
