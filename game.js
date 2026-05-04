@@ -21,7 +21,7 @@ const dexList = document.querySelector("#dexList");
 const shopList = document.querySelector("#shopList");
 const shopMoney = document.querySelector("#shopMoney");
 
-const GAME_VERSION = "v0.9.1";
+const GAME_VERSION = "v0.9.2";
 const COLLECTION_KEY = "tapFishingCollection";
 const ECONOMY_KEY = "tapFishingEconomy";
 
@@ -49,6 +49,7 @@ const fishTypes = [
     image: "assets/fish/001.png",
     rarity: "C",
     catchWeight: 32,
+    catchDifficulty: 0,
   },
   {
     name: "アジ",
@@ -60,6 +61,7 @@ const fishTypes = [
     image: "assets/fish/002.png",
     rarity: "C",
     catchWeight: 28,
+    catchDifficulty: 0,
   },
   {
     name: "タイ",
@@ -71,9 +73,30 @@ const fishTypes = [
     image: "assets/fish/003.png",
     rarity: "R",
     catchWeight: 18,
+    catchDifficulty: 1,
   },
-  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62, color: "#9fc5ba", rarity: "R", catchWeight: 14 },
-  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54, color: "#4c73b8", rarity: "SR", catchWeight: 7 },
+  {
+    name: "スズキ",
+    points: 70,
+    shadow: 76,
+    speed: 58,
+    biteWindow: 0.62,
+    color: "#9fc5ba",
+    rarity: "R",
+    catchWeight: 14,
+    catchDifficulty: 1,
+  },
+  {
+    name: "マグロ",
+    points: 110,
+    shadow: 98,
+    speed: 48,
+    biteWindow: 0.54,
+    color: "#4c73b8",
+    rarity: "SR",
+    catchWeight: 7,
+    catchDifficulty: 2,
+  },
   {
     name: "カワハギ",
     points: 65,
@@ -84,6 +107,7 @@ const fishTypes = [
     image: "assets/fish/004.png",
     rarity: "R",
     catchWeight: 13,
+    catchDifficulty: 1,
   },
   {
     name: "マンボウ",
@@ -95,6 +119,7 @@ const fishTypes = [
     image: "assets/fish/005.png",
     rarity: "SR",
     catchWeight: 6,
+    catchDifficulty: 2,
   },
   {
     name: "ニジイロギョ",
@@ -106,6 +131,7 @@ const fishTypes = [
     image: "assets/fish/006.png",
     rarity: "SR",
     catchWeight: 4,
+    catchDifficulty: 3,
   },
   {
     name: "ヌシ",
@@ -117,6 +143,7 @@ const fishTypes = [
     image: "assets/fish/007.png",
     rarity: "SR",
     catchWeight: 3,
+    catchDifficulty: 3,
   },
 ];
 
@@ -222,8 +249,10 @@ function positionBobber() {
 function randomFishType() {
   const rod = rodUpgrades[state.rodLevel];
   const weightedTypes = fishTypes.map((type) => {
+    const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
+    const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
     const rarityBoost = type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
-    return { type, weight: type.catchWeight * (1 + rarityBoost) };
+    return { type, weight: type.catchWeight * difficultyPenalty * (1 + rarityBoost) };
   });
   const totalWeight = weightedTypes.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * totalWeight;
@@ -239,7 +268,9 @@ function randomFishType() {
 }
 
 function getBiteWindow(type) {
-  return type.biteWindow + rodUpgrades[state.rodLevel].biteBonus;
+  const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
+  const difficultyPenalty = difficultyGap * 0.14;
+  return Math.max(0.24, type.biteWindow + rodUpgrades[state.rodLevel].biteBonus - difficultyPenalty);
 }
 
 function makeAmbientFish() {
@@ -360,9 +391,9 @@ function renderShop() {
       const biteText = Math.round(rod.biteBonus * 100) / 100;
       detail.textContent = owned
         ? index === state.rodLevel
-          ? `装備中 / 反応猶予 +${biteText}秒 / レア補正 +${rareText}%`
+          ? `装備中 / 反応猶予 +${biteText}秒 / 高レア補正 +${rareText}%`
           : "購入済み"
-        : `反応猶予 +${biteText}秒 / レア補正 +${rareText}%`;
+        : `反応猶予 +${biteText}秒 / 高レア補正 +${rareText}%`;
       info.append(title, detail);
 
       const button = document.createElement("button");
