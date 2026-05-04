@@ -53,12 +53,12 @@ const MUSIC_KEY = "tapFishingMusic";
 const titleDefs = [
   { id: "rookie", name: "新人釣り師", condition: () => true },
   { id: "collector", name: "図鑑の友", condition: () => Object.keys(state.collection).length >= 5 },
-  { id: "deepHunter", name: "深海ハンター", condition: () => state.spotId === "deep" || state.collection["ヌシ"] },
-  { id: "legend", name: "伝説を釣る者", condition: () => Object.values(state.collection).reduce((sum, count) => sum + count, 0) >= 30 },
+  { id: "deepHunter", name: "深海ハンター", condition: () => state.spotId === "deep" || getCollectionCount("ヌシ") > 0 },
+  { id: "legend", name: "伝説を釣る者", condition: () => Object.keys(state.collection).reduce((sum, name) => sum + getCollectionCount(name), 0) >= 30 },
 ];
 
 const dexRewardDefs = [
-  { id: "allC", label: "Cコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "C").every((type) => state.collection[type.name]) },
+  { id: "allC", label: "Cコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "C").every((type) => getCollectionCount(type.name) > 0) },
   { id: "firstSR", label: "SR初入手", reward: 360, condition: (type) => type.rarity === "SR" },
 ];
 
@@ -229,9 +229,52 @@ function reloadLatest() {
   window.location.replace(url.toString());
 }
 
+function normalizeCollectionEntry(entry) {
+  if (typeof entry === "number") {
+    return {
+      count: entry,
+      sizes: {},
+    };
+  }
+
+  if (!entry || typeof entry !== "object") {
+    return {
+      count: 0,
+      sizes: {},
+    };
+  }
+
+  const normalizedSizes = {};
+  for (const tier of sizeTiers) {
+    normalizedSizes[tier.label] = Boolean(entry.sizes?.[tier.label]);
+  }
+
+  return {
+    count: Number.isFinite(entry.count) ? entry.count : 0,
+    sizes: normalizedSizes,
+  };
+}
+
+function getCollectionEntry(name) {
+  return normalizeCollectionEntry(state.collection[name]);
+}
+
+function getCollectionCount(name) {
+  return getCollectionEntry(name).count;
+}
+
+function hasCaughtSize(name, sizeLabel) {
+  return Boolean(getCollectionEntry(name).sizes[sizeLabel]);
+}
+
+function isSizeComplete(name) {
+  return sizeTiers.every((tier) => hasCaughtSize(name, tier.label));
+}
+
 function loadCollection() {
   try {
-    return JSON.parse(localStorage.getItem(COLLECTION_KEY)) || {};
+    const rawCollection = JSON.parse(localStorage.getItem(COLLECTION_KEY)) || {};
+    return Object.fromEntries(Object.entries(rawCollection).map(([name, entry]) => [name, normalizeCollectionEntry(entry)]));
   } catch {
     return {};
   }
@@ -630,7 +673,8 @@ function updateHud() {
 function renderDex() {
   dexList.replaceChildren(
     ...fishTypes.map((type) => {
-      const count = state.collection[type.name] || 0;
+      const entry = getCollectionEntry(type.name);
+      const count = entry.count;
       const card = document.createElement("article");
       card.className = `dex-card${count ? "" : " is-locked"}`;
 
@@ -661,7 +705,21 @@ function renderDex() {
       meta.className = "dex-meta";
       meta.textContent = count ? `${count}匹 / ${type.points}pt` : "未発見";
 
-      card.append(art, rarity, name, meta);
+      const sizes = document.createElement("div");
+      sizes.className = "dex-sizes";
+      for (const tier of sizeTiers) {
+        const chip = document.createElement("span");
+        const caught = entry.sizes[tier.label];
+        chip.className = `dex-size${caught ? " is-caught" : ""}`;
+        chip.textContent = tier.label;
+        sizes.append(chip);
+      }
+
+      const complete = document.createElement("div");
+      complete.className = `dex-complete${count && isSizeComplete(type.name) ? " is-done" : ""}`;
+      complete.textContent = count ? (isSizeComplete(type.name) ? "サイズコンプ" : "サイズ収集中") : "サイズ未開放";
+
+      card.append(art, rarity, name, meta, sizes, complete);
       return card;
     })
   );
@@ -950,8 +1008,15 @@ function catchFish() {
   state.score += fish.type.points;
   state.caughtCount += 1;
   state.money += salePrice;
-  const firstTime = !state.collection[fish.type.name];
-  state.collection[fish.type.name] = (state.collection[fish.type.name] || 0) + 1;
+  const currentEntry = getCollectionEntry(fish.type.name);
+  const firstTime = currentEntry.count === 0;
+  state.collection[fish.type.name] = {
+    count: currentEntry.count + 1,
+    sizes: {
+      ...currentEntry.sizes,
+      [fish.size.label]: true,
+    },
+  };
   const rewardTotal = updateRewards(fish.type, firstTime);
   const missionReward = updateMissions(fish.type, salePrice);
   updateTitles();

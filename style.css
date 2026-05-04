@@ -484,6 +484,45 @@ button {
   font-weight: 800;
 }
 
+.dex-sizes {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dex-size,
+.dex-complete {
+  border: 1px solid rgba(16, 32, 51, 0.12);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 0;
+  text-align: center;
+}
+
+.dex-size {
+  background: rgba(16, 32, 51, 0.05);
+  color: var(--muted);
+}
+
+.dex-size.is-caught {
+  background: rgba(36, 121, 184, 0.12);
+  border-color: rgba(36, 121, 184, 0.22);
+  color: var(--sea);
+}
+
+.dex-complete {
+  background: rgba(16, 32, 51, 0.05);
+  color: var(--muted);
+}
+
+.dex-complete.is-done {
+  background: rgba(214, 138, 24, 0.14);
+  border-color: rgba(214, 138, 24, 0.24);
+  color: #b36b00;
+}
+
 @media (max-width: 620px) {
   body {
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
