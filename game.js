@@ -5,11 +5,16 @@ const timeEl = document.querySelector("#time");
 const messageEl = document.querySelector("#message");
 const actionButton = document.querySelector("#actionButton");
 const resetButton = document.querySelector("#resetButton");
+const versionEl = document.querySelector("#version");
+
+const GAME_VERSION = "v0.3.1";
 
 const fishTypes = [
-  { name: "アジ", points: 10, color: "#f6d06f", speed: 92, size: 34 },
-  { name: "タイ", points: 25, color: "#f4776f", speed: 72, size: 42 },
-  { name: "マグロ", points: 50, color: "#4f81d9", speed: 116, size: 58 },
+  { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92 },
+  { name: "アジ", points: 20, shadow: 42, speed: 82, biteWindow: 0.82 },
+  { name: "タイ", points: 45, shadow: 58, speed: 68, biteWindow: 0.72 },
+  { name: "スズキ", points: 70, shadow: 76, speed: 58, biteWindow: 0.62 },
+  { name: "マグロ", points: 110, shadow: 98, speed: 48, biteWindow: 0.54 },
 ];
 
 const state = {
@@ -18,17 +23,18 @@ const state = {
   pixelRatio: 1,
   waterLine: 0,
   rodX: 0,
-  hookY: 0,
-  hookTargetY: 0,
-  hookState: "ready",
-  caughtFish: null,
+  bobber: { x: 0, y: 0, baseY: 0, visible: false, sunk: false },
+  phase: "idle",
   score: 0,
   timeLeft: 60,
   running: true,
   lastTime: 0,
-  fish: [],
+  targetFish: null,
+  ambientFish: [],
+  phaseTimer: 0,
+  biteTimer: 0,
+  catchTimer: 0,
   ripples: [],
-  messageTimer: 0,
 };
 
 function resizeCanvas() {
@@ -41,19 +47,56 @@ function resizeCanvas() {
   ctx.setTransform(state.pixelRatio, 0, 0, state.pixelRatio, 0, 0);
   state.waterLine = state.height * 0.32;
   state.rodX = state.width * 0.5;
-  state.hookY = state.waterLine - 18;
-  state.hookTargetY = state.hookY;
+  positionBobber();
+  makeAmbientFish();
 }
 
-function makeFish(type, index) {
+function positionBobber() {
+  state.bobber.x = state.width * 0.5;
+  state.bobber.baseY = state.waterLine + Math.max(70, state.height * 0.18);
+  state.bobber.y = state.bobber.baseY;
+}
+
+function randomFishType() {
+  const roll = Math.random();
+  if (roll > 0.94) return fishTypes[4];
+  if (roll > 0.82) return fishTypes[3];
+  if (roll > 0.58) return fishTypes[2];
+  if (roll > 0.28) return fishTypes[1];
+  return fishTypes[0];
+}
+
+function makeAmbientFish() {
+  state.ambientFish = Array.from({ length: 7 }, (_, index) => makeShadow(index));
+}
+
+function makeShadow(index) {
+  const type = randomFishType();
   const direction = Math.random() > 0.5 ? 1 : -1;
-  const yMin = state.waterLine + 60;
-  const yMax = state.height - 72;
+  const yMin = state.waterLine + 70;
+  const yMax = state.height - 64;
   return {
-    ...type,
-    x: direction > 0 ? -type.size - index * 90 : state.width + type.size + index * 90,
-    y: yMin + Math.random() * Math.max(40, yMax - yMin),
+    type,
+    x: direction > 0 ? -type.shadow - index * 120 : state.width + type.shadow + index * 120,
+    y: yMin + Math.random() * Math.max(50, yMax - yMin),
     direction,
+    speed: type.speed * (0.55 + Math.random() * 0.35),
+    wobble: Math.random() * Math.PI * 2,
+    alpha: 0.24 + Math.random() * 0.12,
+  };
+}
+
+function makeTargetFish() {
+  const type = randomFishType();
+  const side = Math.random() > 0.5 ? -1 : 1;
+  const startX = state.bobber.x + side * Math.max(state.width * 0.38, 260);
+  return {
+    type,
+    x: startX,
+    y: state.bobber.baseY + 86 + Math.random() * 70,
+    targetX: state.bobber.x + (Math.random() - 0.5) * 24,
+    targetY: state.bobber.baseY + 34,
+    direction: side > 0 ? -1 : 1,
     wobble: Math.random() * Math.PI * 2,
   };
 }
@@ -62,20 +105,24 @@ function resetGame() {
   state.score = 0;
   state.timeLeft = 60;
   state.running = true;
-  state.hookState = "ready";
-  state.caughtFish = null;
+  state.phase = "idle";
+  state.phaseTimer = 0;
+  state.biteTimer = 0;
+  state.catchTimer = 0;
+  state.targetFish = null;
   state.ripples = [];
-  state.fish = Array.from({ length: 9 }, (_, index) => {
-    const type = fishTypes[index % fishTypes.length];
-    return makeFish(type, index);
-  });
+  state.bobber.visible = false;
+  state.bobber.sunk = false;
+  positionBobber();
+  makeAmbientFish();
   updateHud();
-  setMessage("タップで針を落とそう", "針を落とす");
+  setMessage("タップで浮きを投げよう", "投げる");
 }
 
 function updateHud() {
   scoreEl.textContent = String(state.score);
   timeEl.textContent = String(Math.ceil(state.timeLeft));
+  versionEl.textContent = GAME_VERSION;
 }
 
 function setMessage(text, buttonText) {
@@ -90,19 +137,50 @@ function handleTap(event) {
     return;
   }
 
-  if (state.hookState === "ready") {
-    const pointerY = event.clientY ? event.clientY - canvas.getBoundingClientRect().top : state.height * 0.72;
-    state.hookTargetY = Math.max(state.waterLine + 64, Math.min(pointerY, state.height - 56));
-    state.hookState = "dropping";
-    state.ripples.push({ x: state.rodX, y: state.waterLine + 4, radius: 4, alpha: 1 });
-    setMessage("狙いを定めて...", "巻き上げる");
+  if (state.phase === "idle") {
+    castBobber();
     return;
   }
 
-  if (state.hookState === "dropping" || state.hookState === "waiting") {
-    state.hookState = "reeling";
-    setMessage("巻き上げ中", "もう少し");
+  if (state.phase === "bite") {
+    catchFish();
+    return;
   }
+
+  if (state.phase === "waiting" || state.phase === "nibble") {
+    missFish("早すぎた! 魚が逃げた");
+  }
+}
+
+function castBobber() {
+  state.phase = "casting";
+  state.phaseTimer = 0.34;
+  state.bobber.visible = true;
+  state.bobber.sunk = false;
+  state.bobber.y = state.waterLine - 22;
+  state.targetFish = makeTargetFish();
+  state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 6, alpha: 1 });
+  setMessage("魚影が近づくまで待とう", "待つ");
+}
+
+function catchFish() {
+  const fish = state.targetFish;
+  state.score += fish.type.points;
+  state.phase = "caught";
+  state.catchTimer = 1.05;
+  state.targetFish = null;
+  state.bobber.sunk = false;
+  state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
+  setMessage(`${fish.type.name}を釣った! +${fish.type.points}`, "次を投げる");
+}
+
+function missFish(text) {
+  state.phase = "missed";
+  state.phaseTimer = 0.85;
+  state.bobber.sunk = false;
+  state.targetFish = null;
+  state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 10, alpha: 0.8 });
+  setMessage(text, "次を投げる");
 }
 
 function update(delta) {
@@ -114,82 +192,106 @@ function update(delta) {
   if (state.timeLeft <= 0) {
     state.timeLeft = 0;
     state.running = false;
-    state.hookState = "ready";
+    state.phase = "idle";
+    state.bobber.visible = false;
     setMessage(`終了 SCORE ${state.score}`, "もう一度");
   }
-  updateHud();
 
-  updateHook(delta);
-  updateFish(delta);
+  updateHud();
+  updateFishing(delta);
+  updateAmbientFish(delta);
   updateRipples(delta);
 }
 
-function updateHook(delta) {
-  const dropSpeed = 330;
-  const reelSpeed = 470;
-
-  if (state.hookState === "dropping") {
-    state.hookY = Math.min(state.hookTargetY, state.hookY + dropSpeed * delta);
-    if (Math.abs(state.hookY - state.hookTargetY) < 2) {
-      state.hookState = "waiting";
-      setMessage("魚が近づいたらタップ", "巻き上げる");
+function updateFishing(delta) {
+  if (state.phase === "casting") {
+    state.phaseTimer -= delta;
+    state.bobber.y += (state.bobber.baseY - state.bobber.y) * Math.min(1, delta * 12);
+    if (state.phaseTimer <= 0) {
+      state.phase = "waiting";
+      state.phaseTimer = 1.1 + Math.random() * 1.6;
+      state.bobber.y = state.bobber.baseY;
     }
   }
 
-  if (state.hookState === "waiting") {
-    const caught = state.fish.find((fish) => {
-      const dx = Math.abs(fish.x - state.rodX);
-      const dy = Math.abs(fish.y - state.hookY);
-      return dx < fish.size * 0.72 && dy < fish.size * 0.62;
-    });
-
-    if (caught) {
-      state.caughtFish = caught;
-      state.hookState = "reeling";
-      setMessage(`${caught.name}がかかった!`, "巻き上げる");
+  if (state.phase === "waiting") {
+    moveTargetFish(delta, 0.62);
+    state.phaseTimer -= delta;
+    if (state.phaseTimer <= 0 && isTargetNearBobber()) {
+      state.phase = "nibble";
+      state.phaseTimer = 0.5 + Math.random() * 0.75;
+      setMessage("つついてる...", "まだ");
     }
   }
 
-  if (state.hookState === "reeling") {
-    state.hookY = Math.max(state.waterLine - 18, state.hookY - reelSpeed * delta);
-    if (state.caughtFish) {
-      state.caughtFish.x = state.rodX;
-      state.caughtFish.y = state.hookY + 24;
+  if (state.phase === "nibble") {
+    moveTargetFish(delta, 0.25);
+    state.phaseTimer -= delta;
+    state.bobber.y = state.bobber.baseY + Math.sin(performance.now() * 0.04) * 8;
+    if (state.phaseTimer <= 0) {
+      state.phase = "bite";
+      state.biteTimer = state.targetFish.type.biteWindow;
+      state.bobber.sunk = true;
+      state.bobber.y = state.bobber.baseY + 32;
+      state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 12, alpha: 1 });
+      setMessage("いまだ!", "引く");
     }
-    if (state.hookY <= state.waterLine - 18) {
-      finishReeling();
+  }
+
+  if (state.phase === "bite") {
+    state.biteTimer -= delta;
+    if (state.biteTimer <= 0) {
+      missFish("遅かった! 逃げられた");
+    }
+  }
+
+  if (state.phase === "caught") {
+    state.catchTimer -= delta;
+    if (state.catchTimer <= 0) {
+      state.phase = "idle";
+      state.bobber.visible = false;
+      setMessage("タップで浮きを投げよう", "投げる");
+    }
+  }
+
+  if (state.phase === "missed") {
+    state.phaseTimer -= delta;
+    if (state.phaseTimer <= 0) {
+      state.phase = "idle";
+      state.bobber.visible = false;
+      setMessage("タップで浮きを投げよう", "投げる");
     }
   }
 }
 
-function finishReeling() {
-  if (state.caughtFish) {
-    state.score += state.caughtFish.points;
-    setMessage(`${state.caughtFish.name} +${state.caughtFish.points}`, "針を落とす");
-    const index = state.fish.indexOf(state.caughtFish);
-    state.fish[index] = makeFish(fishTypes[Math.floor(Math.random() * fishTypes.length)], index);
-    state.caughtFish = null;
-  } else {
-    setMessage("今回は空振り", "針を落とす");
-  }
-  state.hookState = "ready";
-  state.hookTargetY = state.waterLine - 18;
+function moveTargetFish(delta, pace) {
+  if (!state.targetFish) return;
+  const fish = state.targetFish;
+  fish.wobble += delta * 4;
+  fish.x += (fish.targetX - fish.x) * delta * pace;
+  fish.y += (fish.targetY - fish.y) * delta * pace;
+  fish.y += Math.sin(fish.wobble) * delta * 10;
+  fish.direction = fish.x > state.bobber.x ? -1 : 1;
 }
 
-function updateFish(delta) {
-  for (let index = 0; index < state.fish.length; index += 1) {
-    const fish = state.fish[index];
-    if (fish === state.caughtFish) {
-      continue;
-    }
-    fish.wobble += delta * 3;
+function isTargetNearBobber() {
+  if (!state.targetFish) return false;
+  const dx = Math.abs(state.targetFish.x - state.bobber.x);
+  const dy = Math.abs(state.targetFish.y - state.bobber.baseY);
+  return dx < 54 && dy < 66;
+}
+
+function updateAmbientFish(delta) {
+  for (let index = 0; index < state.ambientFish.length; index += 1) {
+    const fish = state.ambientFish[index];
+    fish.wobble += delta * 2.6;
     fish.x += fish.direction * fish.speed * delta;
-    fish.y += Math.sin(fish.wobble) * 12 * delta;
+    fish.y += Math.sin(fish.wobble) * 9 * delta;
 
-    const offLeft = fish.direction < 0 && fish.x < -fish.size * 2;
-    const offRight = fish.direction > 0 && fish.x > state.width + fish.size * 2;
+    const offLeft = fish.direction < 0 && fish.x < -fish.type.shadow * 2;
+    const offRight = fish.direction > 0 && fish.x > state.width + fish.type.shadow * 2;
     if (offLeft || offRight) {
-      state.fish[index] = makeFish(fishTypes[Math.floor(Math.random() * fishTypes.length)], index);
+      state.ambientFish[index] = makeShadow(index);
     }
   }
 }
@@ -198,8 +300,8 @@ function updateRipples(delta) {
   state.ripples = state.ripples
     .map((ripple) => ({
       ...ripple,
-      radius: ripple.radius + 54 * delta,
-      alpha: ripple.alpha - 1.4 * delta,
+      radius: ripple.radius + 56 * delta,
+      alpha: ripple.alpha - 1.3 * delta,
     }))
     .filter((ripple) => ripple.alpha > 0);
 }
@@ -208,8 +310,7 @@ function draw() {
   ctx.clearRect(0, 0, state.width, state.height);
   drawSky();
   drawWater();
-  drawRodAndHook();
-  state.fish.forEach(drawFish);
+  drawRod();
   drawForeground();
 }
 
@@ -240,12 +341,23 @@ function drawCloud(x, y, scale) {
 
 function drawWater() {
   const gradient = ctx.createLinearGradient(0, state.waterLine, 0, state.height);
-  gradient.addColorStop(0, "#2d9fd2");
-  gradient.addColorStop(1, "#083b68");
+  gradient.addColorStop(0, "#3ba9d3");
+  gradient.addColorStop(1, "#0a416f");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, state.waterLine, state.width, state.height - state.waterLine);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.42)";
+  drawWaterLines();
+  state.ambientFish.forEach((fish) => drawFishShadow(fish, fish.alpha));
+  if (state.targetFish) {
+    const alpha = state.phase === "caught" ? 0.42 : 0.5;
+    drawFishShadow(state.targetFish, alpha);
+  }
+  drawBobber();
+  drawRipples();
+}
+
+function drawWaterLines() {
+  ctx.strokeStyle = "rgba(255,255,255,0.36)";
   ctx.lineWidth = 3;
   for (let y = state.waterLine + 18; y < state.height; y += 58) {
     ctx.beginPath();
@@ -256,7 +368,56 @@ function drawWater() {
     }
     ctx.stroke();
   }
+}
 
+function drawFishShadow(fish, alpha) {
+  const size = fish.type.shadow;
+  ctx.save();
+  ctx.translate(fish.x, fish.y);
+  ctx.scale(fish.direction, 1);
+  ctx.fillStyle = `rgba(4, 31, 51, ${alpha})`;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size, size * 0.34, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.72, 0);
+  ctx.lineTo(-size * 1.2, -size * 0.32);
+  ctx.lineTo(-size * 1.18, size * 0.32);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBobber() {
+  if (!state.bobber.visible) return;
+  const bobberTop = state.bobber.sunk ? state.bobber.y - 7 : state.bobber.y - 22;
+
+  ctx.strokeStyle = "rgba(16,32,51,0.64)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(state.rodX + 18, state.waterLine - 66);
+  ctx.lineTo(state.bobber.x, bobberTop);
+  ctx.stroke();
+
+  ctx.fillStyle = "#f8f6e7";
+  ctx.beginPath();
+  ctx.ellipse(state.bobber.x, bobberTop + 10, 10, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#e83b42";
+  ctx.beginPath();
+  ctx.ellipse(state.bobber.x, bobberTop + 3, 10, 10, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  if (state.bobber.sunk) {
+    ctx.fillStyle = "rgba(255,255,255,0.64)";
+    ctx.beginPath();
+    ctx.arc(state.bobber.x, state.bobber.baseY, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawRipples() {
   state.ripples.forEach((ripple) => {
     ctx.strokeStyle = `rgba(255,255,255,${ripple.alpha})`;
     ctx.lineWidth = 3;
@@ -266,7 +427,7 @@ function drawWater() {
   });
 }
 
-function drawRodAndHook() {
+function drawRod() {
   const deckY = state.waterLine - 8;
   ctx.strokeStyle = "#553c2b";
   ctx.lineCap = "round";
@@ -275,50 +436,6 @@ function drawRodAndHook() {
   ctx.moveTo(state.rodX - 86, deckY);
   ctx.quadraticCurveTo(state.rodX - 28, deckY - 88, state.rodX + 18, deckY - 58);
   ctx.stroke();
-
-  ctx.strokeStyle = "rgba(16,32,51,0.72)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(state.rodX + 18, deckY - 58);
-  ctx.lineTo(state.rodX, state.hookY);
-  ctx.stroke();
-
-  ctx.strokeStyle = "#f7f2df";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(state.rodX + 4, state.hookY + 4, 10, Math.PI * 0.08, Math.PI * 1.55);
-  ctx.stroke();
-}
-
-function drawFish(fish) {
-  const direction = fish.direction;
-  const size = fish.size;
-  ctx.save();
-  ctx.translate(fish.x, fish.y);
-  ctx.scale(direction, 1);
-
-  ctx.fillStyle = fish.color;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, size, size * 0.42, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(-size * 0.8, 0);
-  ctx.lineTo(-size * 1.38, -size * 0.42);
-  ctx.lineTo(-size * 1.32, size * 0.42);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.beginPath();
-  ctx.ellipse(size * 0.2, -size * 0.08, size * 0.28, size * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#102033";
-  ctx.beginPath();
-  ctx.arc(size * 0.58, -size * 0.08, Math.max(3, size * 0.07), 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
 }
 
 function drawForeground() {

@@ -74,6 +74,10 @@ button {
   min-width: 86px;
 }
 
+.hud .version {
+  min-width: 94px;
+}
+
 .label {
   color: var(--muted);
   font-size: 12px;
@@ -84,6 +88,11 @@ button {
 .hud strong {
   font-size: clamp(24px, 4vw, 38px);
   line-height: 1;
+}
+
+.hud .version strong {
+  color: var(--muted);
+  font-size: clamp(16px, 2.4vw, 22px);
 }
 
 #resetButton {
