@@ -92,6 +92,10 @@ button {
 .hud strong {
   font-size: clamp(24px, 4vw, 38px);
   line-height: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hud .version strong {
@@ -231,6 +235,9 @@ button {
 .menu-panel {
   display: grid;
   gap: 12px;
+  max-height: 100%;
+  overflow: auto;
+  touch-action: pan-y;
 }
 
 .menu-panel h1 {
@@ -245,6 +252,20 @@ button {
   font-size: clamp(20px, 4vw, 30px);
   min-height: 58px;
   padding: 0 20px;
+}
+
+.menu-grid,
+.menu-system {
+  display: grid;
+  gap: 10px;
+}
+
+.menu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.menu-system {
+  grid-template-columns: 1fr;
 }
 
 .secondary-button,
@@ -735,7 +756,7 @@ button {
 }
 
 .dex-detail {
-  align-items: end;
+  align-items: center;
   background: rgba(7, 29, 42, 0.48);
   border-radius: 8px;
   display: flex;
@@ -758,6 +779,8 @@ button {
   display: grid;
   gap: 14px;
   max-width: 640px;
+  max-height: calc(100dvh - 72px);
+  overflow: auto;
   padding: 18px;
   position: relative;
   width: 100%;
@@ -929,6 +952,10 @@ button {
     font-size: 24px;
   }
 
+  #spotName {
+    font-size: 18px;
+  }
+
   .hud .version strong {
     font-size: 14px;
   }
@@ -982,6 +1009,24 @@ button {
     padding: 10px;
   }
 
+  .menu-panel {
+    gap: 10px;
+    width: min(100%, 520px);
+  }
+
+  .menu-panel h1 {
+    font-size: clamp(36px, 12vw, 58px);
+    margin-bottom: 4px;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button {
+    font-size: 18px;
+    min-height: 48px;
+    padding: 0 12px;
+  }
+
   .dex-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1018,6 +1063,7 @@ button {
 
   .dex-detail-card {
     gap: 12px;
+    max-height: calc(100dvh - 40px);
     padding: 14px;
   }
 
@@ -1032,6 +1078,7 @@ button {
 
   .dex-detail-art {
     aspect-ratio: 1.2;
+    max-height: 150px;
   }
 
   .dex-detail-head h3 {
@@ -1050,11 +1097,15 @@ button {
   }
 
   .hud strong {
-    font-size: 21px;
+    font-size: 19px;
   }
 
   .hud .version strong {
     font-size: 12px;
+  }
+
+  #spotName {
+    font-size: 15px;
   }
 
   #menuButton {

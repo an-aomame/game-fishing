@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Tap Fishing</title>
-    <link rel="stylesheet" href="style.css?v=2.2.3">
+    <link rel="stylesheet" href="style.css?v=2.2.4">
   </head>
   <body>
     <main class="game-shell">
@@ -50,14 +50,18 @@
       <section id="menuScreen" class="screen" aria-label="メニュー画面">
         <div class="menu-panel">
           <h1>Tap Fishing</h1>
-          <button id="menuMusicButton" class="secondary-button menu-music-button" type="button">BGMを鳴らす</button>
           <button id="startButton" class="primary-button" type="button">釣りを始める</button>
-          <button id="menuMissionButton" class="secondary-button" type="button">任務</button>
-          <button id="menuSpotButton" class="secondary-button" type="button">釣り場</button>
-          <button id="menuReloadButton" class="secondary-button" type="button">最新版を読み込む</button>
-          <button id="menuShopButton" class="secondary-button" type="button">店</button>
-          <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
-          <button id="fullResetButton" class="danger-button" type="button">はじめから</button>
+          <div class="menu-grid">
+            <button id="menuMissionButton" class="secondary-button" type="button">任務</button>
+            <button id="menuSpotButton" class="secondary-button" type="button">釣り場</button>
+            <button id="menuShopButton" class="secondary-button" type="button">店</button>
+            <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
+          </div>
+          <div class="menu-system">
+            <button id="menuMusicButton" class="secondary-button menu-music-button" type="button">BGMを鳴らす</button>
+            <button id="menuReloadButton" class="secondary-button" type="button">最新版を読み込む</button>
+            <button id="fullResetButton" class="danger-button" type="button">はじめから</button>
+          </div>
         </div>
       </section>
 
@@ -142,7 +146,7 @@
       </section>
     </main>
 
-    <script src="game-config.js?v=2.2.3"></script>
-    <script src="game.js?v=2.2.3"></script>
+    <script src="game-config.js?v=2.2.4"></script>
+    <script src="game.js?v=2.2.4"></script>
   </body>
 </html>
