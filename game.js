@@ -571,6 +571,12 @@ function unlockAudio() {
 }
 
 function toggleMusic() {
+  if (state.musicEnabled && !state.audio.unlocked) {
+    unlockAudio();
+    updateMusicButton();
+    return;
+  }
+
   state.musicEnabled = !state.musicEnabled;
   saveMusicEnabled();
   updateMusicButton();
