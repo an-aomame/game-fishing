@@ -198,11 +198,11 @@ function openDexDetail(type) {
       ? `色違いも確認済みじゃ! ${type.name}の記録としてはかなり特別じゃぞい。`
       : `${type.name}のことなら、わしに聞くとよいぞい。`
     : "まだ姿が確認できておらんのう。";
-  dexDetailSpot.textContent = discovered ? recommendedSpot?.name || "不明" : "???";
+  dexDetailSpot.textContent = recommendedSpot ? `${recommendedSpot.name}${discovered ? "" : " 付近?"}` : "不明";
   dexDetailTrend.textContent = discovered ? type.sizeHint || "まだ傾向は調査中じゃ。" : "???";
   dexDetailText.textContent = discovered
     ? type.description || "まだ詳しい解説は準備中じゃ。"
-    : "まずは実際に釣り上げてみるのじゃ。姿を確かめれば、図鑑の記録もぐっと深まるぞい。";
+    : `${recommendedSpot?.name || "どこかの海"}で魚影を探してみるのじゃ。姿を確かめれば、図鑑の記録もぐっと深まるぞい。`;
 
   dexDetailSizes.replaceChildren(
     ...sizeTiers.map((tier) => {
