@@ -334,6 +334,38 @@ button {
   grid-template-columns: 1fr;
 }
 
+.mission-section {
+  display: grid;
+  gap: 10px;
+}
+
+.mission-section-header {
+  align-items: center;
+  background: rgba(16, 32, 51, 0.08);
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.mission-section-header h3 {
+  font-size: 18px;
+  line-height: 1;
+  margin: 0;
+}
+
+.mission-section-header span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mission-section-cards {
+  display: grid;
+  gap: 10px;
+}
+
 .shop-section-title {
   color: var(--ink);
   font-size: 18px;

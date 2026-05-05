@@ -104,6 +104,8 @@ const missionKindLabels = {
   shinyCount: "色違い",
 };
 
+const missionKindOrder = ["基本", "進行", "場所", "魚種", "サイズ", "図鑑", "高難度", "伝説", "色違い"];
+
 
 const fishImages = new Map();
 
@@ -1149,44 +1151,86 @@ function getMissionDisplay(def) {
 
 function renderMissions() {
   missionCount.textContent = `${getCompletedMissionCount()} / ${missionDefs.length} 完了`;
+  const missionGroups = new Map();
+
+  missionDefs.forEach((def) => {
+    const key = missionKindLabels[def.kind] || "任務";
+    if (!missionGroups.has(key)) {
+      missionGroups.set(key, []);
+    }
+    missionGroups.get(key).push(def);
+  });
+
+  const orderedGroups = [
+    ...missionKindOrder.filter((key) => missionGroups.has(key)),
+    ...[...missionGroups.keys()].filter((key) => !missionKindOrder.includes(key)),
+  ];
+
   missionList.replaceChildren(
-    ...missionDefs.map((def) => {
-      const progress = getMissionCardProgress(def);
-      const completed = Boolean(state.missions[def.id]?.completed);
-      const display = getMissionDisplay(def);
-      const card = document.createElement("article");
-      card.className = `mission-card${completed ? " is-done" : ""}${display.hidden ? " is-secret" : ""}`;
+    ...orderedGroups.map((groupName) => {
+      const section = document.createElement("section");
+      section.className = "mission-section";
+      const defs = missionGroups.get(groupName);
+      const completedInGroup = defs.filter((def) => state.missions[def.id]?.completed).length;
 
-      const head = document.createElement("div");
-      head.className = "mission-card-head";
-
-      const titleWrap = document.createElement("div");
-      const badge = document.createElement("span");
-      badge.className = "mission-kind";
-      badge.textContent = display.badge;
+      const heading = document.createElement("header");
+      heading.className = "mission-section-header";
       const title = document.createElement("h3");
-      title.textContent = display.label;
-      titleWrap.append(badge, title);
+      title.textContent = groupName;
+      const count = document.createElement("span");
+      count.textContent = `${completedInGroup} / ${defs.length}`;
+      heading.append(title, count);
 
-      const reward = document.createElement("div");
-      reward.className = "mission-reward";
-      reward.textContent = display.reward;
+      const cards = document.createElement("div");
+      cards.className = "mission-section-cards";
 
-      head.append(titleWrap, reward);
+      const sortedDefs = [...defs].sort((left, right) => {
+        const leftDone = state.missions[left.id]?.completed ? 1 : 0;
+        const rightDone = state.missions[right.id]?.completed ? 1 : 0;
+        return leftDone - rightDone;
+      });
 
-      const meter = document.createElement("div");
-      meter.className = "mission-meter";
-      const fill = document.createElement("span");
-      const progressRate = (progress / def.target) * 100;
-      fill.style.width = display.hidden || progress <= 0 ? "0%" : `${Math.max(6, progressRate)}%`;
-      meter.append(fill);
+      cards.replaceChildren(...sortedDefs.map((def) => {
+        const progress = getMissionCardProgress(def);
+        const completed = Boolean(state.missions[def.id]?.completed);
+        const display = getMissionDisplay(def);
+        const card = document.createElement("article");
+        card.className = `mission-card${completed ? " is-done" : ""}${display.hidden ? " is-secret" : ""}`;
 
-      const meta = document.createElement("div");
-      meta.className = "mission-meta";
-      meta.textContent = display.hidden ? "ゲームを進めると内容が判明" : completed ? "達成済み" : `${progress} / ${def.target}`;
+        const head = document.createElement("div");
+        head.className = "mission-card-head";
 
-      card.append(head, meter, meta);
-      return card;
+        const titleWrap = document.createElement("div");
+        const badge = document.createElement("span");
+        badge.className = "mission-kind";
+        badge.textContent = display.badge;
+        const title = document.createElement("h3");
+        title.textContent = display.label;
+        titleWrap.append(badge, title);
+
+        const reward = document.createElement("div");
+        reward.className = "mission-reward";
+        reward.textContent = display.reward;
+
+        head.append(titleWrap, reward);
+
+        const meter = document.createElement("div");
+        meter.className = "mission-meter";
+        const fill = document.createElement("span");
+        const progressRate = (progress / def.target) * 100;
+        fill.style.width = display.hidden || progress <= 0 ? "0%" : `${Math.max(6, progressRate)}%`;
+        meter.append(fill);
+
+        const meta = document.createElement("div");
+        meta.className = "mission-meta";
+        meta.textContent = display.hidden ? "ゲームを進めると内容が判明" : completed ? "達成済み" : `${progress} / ${def.target}`;
+
+        card.append(head, meter, meta);
+        return card;
+      }));
+
+      section.append(heading, cards);
+      return section;
     })
   );
 }
