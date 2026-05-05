@@ -1445,7 +1445,7 @@ function catchFish() {
   if (fish.type.isStar) {
     startFever();
     state.phase = "showcase";
-    state.showcaseTimer = 1.8;
+    state.showcaseTimer = 2.35;
     state.showcaseFish = fish.type;
     state.showcaseSize = fish.size;
     state.showcasePrice = 0;
@@ -1634,7 +1634,35 @@ function draw() {
   drawWater();
   drawRod();
   drawForeground();
+  drawFeverOverlay();
   drawShowcase();
+}
+
+function drawFeverOverlay() {
+  if (state.feverTimer <= 0 || state.phase === "showcase") return;
+
+  const pulse = 0.55 + Math.sin(performance.now() * 0.008) * 0.22;
+  ctx.save();
+  const border = Math.max(8, Math.min(18, state.width * 0.018));
+  const frameGradient = ctx.createLinearGradient(0, 0, state.width, state.height);
+  frameGradient.addColorStop(0, `rgba(255, 238, 102, ${0.2 + pulse * 0.18})`);
+  frameGradient.addColorStop(0.5, `rgba(255, 148, 72, ${0.08 + pulse * 0.08})`);
+  frameGradient.addColorStop(1, `rgba(255, 238, 102, ${0.18 + pulse * 0.16})`);
+  ctx.fillStyle = frameGradient;
+  ctx.fillRect(0, 0, state.width, border);
+  ctx.fillRect(0, state.height - border, state.width, border);
+  ctx.fillRect(0, 0, border, state.height);
+  ctx.fillRect(state.width - border, 0, border, state.height);
+
+  for (let index = 0; index < 18; index += 1) {
+    const drift = performance.now() * 0.00018;
+    const x = ((index * 83 + drift * state.width * 0.8) % (state.width + 80)) - 40;
+    const y = state.waterLine + 24 + ((index * 47 + drift * state.height * 0.9) % Math.max(1, state.height - state.waterLine - 60));
+    const sparkle = 2 + (index % 4) * 1.3 + pulse * 1.4;
+    ctx.globalAlpha = 0.18 + (index % 3) * 0.08;
+    drawStarBody(x, y, sparkle);
+  }
+  ctx.restore();
 }
 
 function drawSky() {
@@ -1899,7 +1927,8 @@ function drawShowcase() {
   const isStar = Boolean(state.showcaseFish.isStar);
   const isShiny = state.showcaseShiny && !isStar;
   const sizeInfo = state.showcaseSize || sizeTiers[1];
-  const progress = 1 - state.showcaseTimer / 1.8;
+  const showcaseDuration = isStar ? 2.35 : 1.8;
+  const progress = 1 - state.showcaseTimer / showcaseDuration;
   const pop = Math.min(1, progress * 4);
   const fade = Math.min(1, state.showcaseTimer * 4);
   const size = Math.min(state.width * 0.34, state.height * 0.23, 188) * (0.8 + pop * 0.2) * Math.min(1.18, sizeInfo.shadowScale);
@@ -1925,17 +1954,68 @@ function drawShowcase() {
     }
   }
 
+  if (isStar) {
+    const beamCount = 18;
+    ctx.save();
+    ctx.translate(state.width * 0.5, y);
+    ctx.rotate(progress * Math.PI * 1.35);
+    for (let index = 0; index < beamCount; index += 1) {
+      const angle = (Math.PI * 2 * index) / beamCount;
+      const inner = size * (0.44 + Math.sin(progress * Math.PI) * 0.08);
+      const outer = size * (2.6 + (index % 3) * 0.24);
+      ctx.rotate(angle);
+      const beam = ctx.createLinearGradient(inner, 0, outer, 0);
+      beam.addColorStop(0, "rgba(255,255,255,0.52)");
+      beam.addColorStop(0.48, "rgba(255,225,70,0.28)");
+      beam.addColorStop(1, "rgba(255,225,70,0)");
+      ctx.globalAlpha = fade * (0.28 + (index % 2) * 0.1);
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(inner, -size * 0.035);
+      ctx.lineTo(outer, -size * 0.12);
+      ctx.lineTo(outer, size * 0.12);
+      ctx.lineTo(inner, size * 0.035);
+      ctx.closePath();
+      ctx.fill();
+      ctx.rotate(-angle);
+    }
+    ctx.restore();
+  }
+
   ctx.globalAlpha = fade;
   const glow = ctx.createRadialGradient(state.width * 0.5, y, size * 0.2, state.width * 0.5, y, size * 2.4);
-  glow.addColorStop(0, isShiny ? "rgba(255, 235, 78, 0.95)" : style.glow);
+  glow.addColorStop(0, isStar ? "rgba(255, 244, 98, 0.98)" : isShiny ? "rgba(255, 235, 78, 0.95)" : style.glow);
   glow.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = glow;
   ctx.beginPath();
   ctx.ellipse(state.width * 0.5, y + size * 0.02, size * 2.45, size * 1.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (state.showcaseFish.rarity !== "C" || isShiny) {
-    drawShowcaseParticles(isShiny ? { ...style, color: "#ffe84d", particles: Math.max(style.particles, 44) } : style, progress, fade, state.width * 0.5, y, size * 1.42);
+  if (state.showcaseFish.rarity !== "C" || isShiny || isStar) {
+    const particleStyle = isStar
+      ? { ...style, color: "#ffe84d", particles: 72 }
+      : isShiny
+        ? { ...style, color: "#ffe84d", particles: Math.max(style.particles, 44) }
+        : style;
+    drawShowcaseParticles(particleStyle, progress, fade, state.width * 0.5, y, size * (isStar ? 1.75 : 1.42));
+  }
+
+  if (isStar) {
+    ctx.save();
+    ctx.translate(state.width * 0.5, y);
+    ctx.rotate(-progress * Math.PI * 2.2);
+    ctx.globalAlpha = fade * 0.72;
+    ctx.strokeStyle = "rgba(255,255,255,0.78)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.35, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,214,64,0.74)";
+    ctx.setLineDash([size * 0.16, size * 0.12]);
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.58, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   if (isSsr) {
@@ -1973,7 +2053,7 @@ function drawShowcase() {
   ctx.fillText(isStar ? "FEVER TIME" : `${isShiny ? "色違い " : ""}${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
   ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(isStar ? `${feverSettings.duration}秒 レア出現UP` : `+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
+  ctx.fillText(isStar ? `${feverSettings.duration}秒 レア魚・大物チャンス!` : `+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
   ctx.restore();
 }
 
