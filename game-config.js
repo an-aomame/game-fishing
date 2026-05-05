@@ -1,6 +1,7 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v2.0.0",
+  version: "v2.1.0",
   rarityStyles: {
+    STAR: { label: "STAR", color: "#ffd94d", glow: "rgba(255, 236, 112, 0.82)", particles: 34 },
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
     R: { label: "R", color: "#2f8fcb", glow: "rgba(111, 218, 240, 0.58)", particles: 16 },
     SR: { label: "SR", color: "#d68a18", glow: "rgba(255, 205, 84, 0.74)", particles: 28 },
@@ -35,6 +36,24 @@ window.GAME_CONFIG = Object.freeze({
     { label: "大", multiplier: 1.35, shadowScale: 1.18, weight: 20 },
     { label: "特大", multiplier: 2, shadowScale: 1.42, weight: 6 },
   ],
+  feverSettings: {
+    duration: 30,
+    starWeight: 3,
+    rarityMultiplier: { C: 0.38, R: 1.45, SR: 2.25, SSR: 2.8 },
+    bigBonus: 0.18,
+  },
+  starCatch: {
+    name: "星",
+    points: 0,
+    shadow: 42,
+    speed: 74,
+    biteWindow: 0.62,
+    color: "#ffd94d",
+    rarity: "STAR",
+    catchWeight: 3,
+    catchDifficulty: 1,
+    isStar: true,
+  },
   fishingSpots: [
     {
       id: "pier",

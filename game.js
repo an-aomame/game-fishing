@@ -56,6 +56,8 @@ const {
   reelUpgrades,
   baitUpgrades,
   sizeTiers,
+  feverSettings,
+  starCatch,
   fishingSpots,
   bgmThemes,
   missionDefs,
@@ -137,6 +139,8 @@ const state = {
   showcaseFish: null,
   showcaseSize: null,
   showcasePrice: 0,
+  feverTimer: 0,
+  wasFeverActive: false,
   ambientFish: [],
   phaseTimer: 0,
   biteTimer: 0,
@@ -465,6 +469,13 @@ function playSfx(kind) {
     return;
   }
 
+  if (kind === "fever") {
+    playSfxTone(now, 740, 0.08, "triangle", 0.048, 980);
+    playSfxTone(now + 0.08, 980, 0.08, "triangle", 0.05, 1320);
+    playSfxTone(now + 0.18, 1320, 0.16, "sine", 0.045, 1760);
+    return;
+  }
+
   if (kind === "catch") {
     playSfxTone(now, 520, 0.08, "triangle", 0.045, 680);
     playSfxTone(now + 0.08, 680, 0.09, "triangle", 0.045, 880);
@@ -645,15 +656,17 @@ function positionBobber() {
   state.bobber.y = state.bobber.baseY;
 }
 
-function randomFishType() {
+function randomFishType(includeSpecial = true) {
   const rod = getEquippedRod();
   const bait = getEquippedBait();
   const spot = getCurrentSpot();
+  const feverActive = state.feverTimer > 0;
   const weightedTypes = fishTypes.map((type) => {
     const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
     const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
     const rarityBoost =
       type.rarity === "SSR" ? rod.rareBonus * 1.18 : type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
+    const feverBoost = feverActive ? feverSettings.rarityMultiplier[type.rarity] || 1 : 1;
     return {
       type,
       weight:
@@ -662,9 +675,18 @@ function randomFishType() {
         spot.rarityMultiplier[type.rarity] *
         bait.rarityMultiplier[type.rarity] *
         (1 + (bait.fishBonus[type.name] || 0)) *
-        (1 + rarityBoost),
+        (1 + rarityBoost) *
+        feverBoost,
     };
   });
+
+  if (includeSpecial && !feverActive) {
+    weightedTypes.push({
+      type: starCatch,
+      weight: feverSettings.starWeight,
+    });
+  }
+
   const totalWeight = weightedTypes.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * totalWeight;
 
@@ -687,7 +709,9 @@ function getBiteWindow(type) {
 function randomFishSize() {
   const spot = getCurrentSpot();
   const weightedSizes = sizeTiers.map((tier, index) => {
-    const bigBoost = index >= 2 ? 1 + spot.bigBonus * (index === 3 ? 1.8 : 1) : 1;
+    const feverBigBonus = state.feverTimer > 0 ? feverSettings.bigBonus : 0;
+    const bigBonus = spot.bigBonus + feverBigBonus;
+    const bigBoost = index >= 2 ? 1 + bigBonus * (index === 3 ? 1.8 : 1) : 1;
     return { tier, weight: tier.weight * bigBoost };
   });
   const totalWeight = weightedSizes.reduce((sum, item) => sum + item.weight, 0);
@@ -708,7 +732,7 @@ function makeAmbientFish() {
 }
 
 function makeShadow(index) {
-  const type = randomFishType();
+  const type = randomFishType(false);
   const direction = Math.random() > 0.5 ? 1 : -1;
   const yMin = state.waterLine + 58;
   const yMax = state.height - Math.max(118, state.height * 0.22);
@@ -725,7 +749,7 @@ function makeShadow(index) {
 
 function makeTargetFish() {
   const type = randomFishType();
-  const size = randomFishSize();
+  const size = type.isStar ? sizeTiers[1] : randomFishSize();
   const side = Math.random() > 0.5 ? -1 : 1;
   const startX = state.bobber.x + side * Math.max(state.width * 0.3, 180);
   return {
@@ -752,6 +776,8 @@ function resetGame() {
   state.showcaseFish = null;
   state.showcaseSize = null;
   state.showcasePrice = 0;
+  state.feverTimer = 0;
+  state.wasFeverActive = false;
   state.ripples = [];
   state.bobber.visible = false;
   state.bobber.sunk = false;
@@ -766,6 +792,12 @@ function updateHud() {
   scoreEl.textContent = `${state.money}`;
   caughtEl.textContent = String(state.caughtCount);
   versionEl.textContent = GAME_VERSION;
+  if (state.feverTimer > 0) {
+    missionSummaryEl.textContent = `FEVER ${Math.ceil(state.feverTimer)}秒 / レア魚と大物の気配アップ`;
+  } else if (state.wasFeverActive) {
+    state.wasFeverActive = false;
+    updateMissionSummary();
+  }
 }
 
 function renderDex() {
@@ -1201,8 +1233,29 @@ function castBobber() {
   setMessage("魚影が近づくまで待とう", "待つ");
 }
 
+function startFever() {
+  state.feverTimer = feverSettings.duration;
+  state.wasFeverActive = true;
+  playSfx("fever");
+  setMessage(`星を釣った! ${feverSettings.duration}秒フィーバー!`, "次を投げる");
+}
+
 function catchFish() {
   const fish = state.targetFish;
+  if (fish.type.isStar) {
+    startFever();
+    state.phase = "showcase";
+    state.showcaseTimer = 1.8;
+    state.showcaseFish = fish.type;
+    state.showcaseSize = fish.size;
+    state.showcasePrice = 0;
+    state.targetFish = null;
+    state.bobber.sunk = false;
+    state.bobber.visible = false;
+    state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
+    return;
+  }
+
   const saleBonus = 1 + getEquippedRod().saleBonus + getEquippedReel().saleBonus;
   const salePrice = Math.round(fish.type.points * fish.size.multiplier * saleBonus);
   state.score += fish.type.points;
@@ -1249,11 +1302,17 @@ function missFish(text) {
 }
 
 function update(delta) {
+  updateFever(delta);
   updateHud();
   updateFishing(delta);
   updateAmbientFish(delta);
   updateRipples(delta);
   scheduleBgm();
+}
+
+function updateFever(delta) {
+  if (state.feverTimer <= 0) return;
+  state.feverTimer = Math.max(0, state.feverTimer - delta);
 }
 
 function updateFishing(delta) {
@@ -1466,6 +1525,15 @@ function drawSpotDetails(detail) {
 
 function drawFishShadow(fish, alpha) {
   const size = fish.type.shadow * (fish.size?.shadowScale || 1);
+  if (fish.type.isStar) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(fish.x, fish.y);
+    drawStarBody(0, 0, size * 0.55);
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(fish.x, fish.y);
   ctx.scale(fish.direction, 1);
@@ -1483,6 +1551,11 @@ function drawFishShadow(fish, alpha) {
 }
 
 function drawFishBody(type, x, y, size, direction) {
+  if (type.isStar) {
+    drawStarBody(x, y, size * 0.78);
+    return;
+  }
+
   const image = type.image ? fishImages.get(type.image) : null;
   if (image?.complete && image.naturalWidth > 0) {
     const imageSize = size * 2.28;
@@ -1529,6 +1602,35 @@ function drawFishBody(type, x, y, size, direction) {
   ctx.restore();
 }
 
+function drawStarBody(x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.18);
+
+  const points = 5;
+  ctx.fillStyle = "#ffd94d";
+  ctx.strokeStyle = "rgba(116, 82, 0, 0.28)";
+  ctx.lineWidth = Math.max(3, size * 0.05);
+  ctx.beginPath();
+  for (let index = 0; index < points * 2; index += 1) {
+    const radius = index % 2 === 0 ? size : size * 0.46;
+    const angle = -Math.PI / 2 + (index * Math.PI) / points;
+    const px = Math.cos(angle) * radius;
+    const py = Math.sin(angle) * radius;
+    if (index === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.18, -size * 0.2, size * 0.28, size * 0.14, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawShowcaseParticles(style, progress, fade, centerX, centerY, radius) {
   for (let index = 0; index < style.particles; index += 1) {
     const angle = index * 2.399 + progress * 3.2;
@@ -1565,6 +1667,7 @@ function drawShowcase() {
   if (!state.showcaseFish) return;
   const style = rarityStyles[state.showcaseFish.rarity];
   const isSsr = state.showcaseFish.rarity === "SSR";
+  const isStar = Boolean(state.showcaseFish.isStar);
   const sizeInfo = state.showcaseSize || sizeTiers[1];
   const progress = 1 - state.showcaseTimer / 1.8;
   const pop = Math.min(1, progress * 4);
@@ -1573,20 +1676,20 @@ function drawShowcase() {
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = (isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
+  ctx.globalAlpha = (isStar ? 0.64 : isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();
 
   ctx.save();
-  if (isSsr) {
+  if (isSsr || isStar) {
     const flash = Math.max(0, 1 - progress * 4.2);
     if (flash > 0) {
-      ctx.globalAlpha = flash * 0.72;
+      ctx.globalAlpha = flash * (isStar ? 0.52 : 0.72);
       const flashGradient = ctx.createLinearGradient(0, 0, state.width, state.height);
       flashGradient.addColorStop(0, "rgba(255,255,255,0.98)");
-      flashGradient.addColorStop(0.45, "rgba(242,196,255,0.88)");
-      flashGradient.addColorStop(1, "rgba(118,65,255,0.78)");
+      flashGradient.addColorStop(0.45, isStar ? "rgba(255,238,128,0.82)" : "rgba(242,196,255,0.88)");
+      flashGradient.addColorStop(1, isStar ? "rgba(255,194,65,0.66)" : "rgba(118,65,255,0.78)");
       ctx.fillStyle = flashGradient;
       ctx.fillRect(0, 0, state.width, state.height);
     }
@@ -1637,10 +1740,10 @@ function drawShowcase() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `900 ${Math.max(30, Math.min(50, state.width * 0.095))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(`${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
+  ctx.fillText(isStar ? "FEVER TIME" : `${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
   ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(`+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
+  ctx.fillText(isStar ? `${feverSettings.duration}秒 レア出現UP` : `+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
   ctx.restore();
 }
 
