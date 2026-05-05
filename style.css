@@ -253,6 +253,11 @@ button {
   color: var(--ink);
 }
 
+.menu-music-button.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
 .danger-button {
   background: rgba(176, 42, 42, 0.12);
   color: #8f2424;

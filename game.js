@@ -19,6 +19,7 @@ const dexScreen = document.querySelector("#dexScreen");
 const shopScreen = document.querySelector("#shopScreen");
 const spotScreen = document.querySelector("#spotScreen");
 const startButton = document.querySelector("#startButton");
+const menuMusicButton = document.querySelector("#menuMusicButton");
 const menuMissionButton = document.querySelector("#menuMissionButton");
 const menuSpotButton = document.querySelector("#menuSpotButton");
 const menuReloadButton = document.querySelector("#menuReloadButton");
@@ -527,8 +528,11 @@ function scheduleBgm() {
 }
 
 function updateMusicButton() {
+  const isPlayingCurrentTheme = isCurrentBgmPlaying();
   musicToggleButton.textContent = state.musicEnabled ? "BGM ON" : "BGM OFF";
   musicToggleButton.classList.toggle("is-on", state.musicEnabled);
+  menuMusicButton.textContent = isPlayingCurrentTheme ? "BGMを止める" : "BGMを鳴らす";
+  menuMusicButton.classList.toggle("is-on", isPlayingCurrentTheme);
 }
 
 function getBgmThemeId() {
@@ -611,17 +615,20 @@ function stopMusic() {
   }
 }
 
-function toggleMusic() {
+function isCurrentBgmPlaying() {
   const context = state.audio.context;
   const activeThemeId = getBgmThemeId();
-  const isPlayingCurrentTheme =
+  return (
     state.musicEnabled &&
     state.audio.unlocked &&
     context &&
     context.state === "running" &&
-    state.audio.currentThemeId === activeThemeId;
+    state.audio.currentThemeId === activeThemeId
+  );
+}
 
-  if (isPlayingCurrentTheme) {
+function toggleMusic() {
+  if (isCurrentBgmPlaying()) {
     stopMusic();
     return;
   }
@@ -1925,6 +1932,14 @@ musicToggleButton.addEventListener("pointerdown", handleMusicToggleEvent);
 musicToggleButton.addEventListener("touchend", handleMusicToggleEvent);
 musicToggleButton.addEventListener("click", handleMusicToggleEvent);
 musicToggleButton.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  toggleMusic();
+});
+menuMusicButton.addEventListener("pointerdown", handleMusicToggleEvent);
+menuMusicButton.addEventListener("touchend", handleMusicToggleEvent);
+menuMusicButton.addEventListener("click", handleMusicToggleEvent);
+menuMusicButton.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();
   toggleMusic();
