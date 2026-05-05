@@ -844,7 +844,8 @@ button {
   padding: 10px 12px;
 }
 
-.doctor-mark {
+.doctor-mark,
+.doctor-image {
   align-items: center;
   background: var(--ink);
   border-radius: 999px;
@@ -860,6 +861,14 @@ button {
 .dex-detail-head h3 {
   display: block;
   margin: 0;
+}
+
+.doctor-image {
+  background: rgba(255, 255, 255, 0.92);
+  height: 54px;
+  object-fit: cover;
+  padding: 2px;
+  width: 54px;
 }
 
 .dex-detail-doctor p,
