@@ -79,14 +79,21 @@ const titleDefs = [
 ];
 
 const dexRewardDefs = [
-  { id: "allC", label: "Cコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "C").every((type) => getCollectionCount(type.name) > 0) },
-  { id: "firstSR", label: "SR初入手", reward: 360, condition: (type) => type.rarity === "SR" || type.rarity === "SSR" },
+  { id: "allC", label: "コモンコンプリート", reward: 220, condition: () => fishTypes.filter((type) => type.rarity === "COMMON").every((type) => getCollectionCount(type.name) > 0) },
+  { id: "firstSR", label: "エピック初入手", reward: 360, condition: (type) => getRarityRank(type.rarity) >= getRarityRank("EPIC") },
 ];
 
 const rarityRank = {
-  SSR: 4,
-  SR: 3,
-  R: 2,
+  SECRET: 7,
+  MYTHIC: 6,
+  LEGENDARY: 5,
+  EPIC: 4,
+  RARE: 3,
+  UNCOMMON: 2,
+  COMMON: 1,
+  SSR: 7,
+  SR: 4,
+  R: 3,
   C: 1,
 };
 
@@ -115,6 +122,18 @@ fishTypes.forEach((type) => {
   image.src = type.image;
   fishImages.set(type.image, image);
 });
+
+function getRarityRank(rarity) {
+  return rarityRank[rarity] || 0;
+}
+
+function getRarityStyle(rarity) {
+  return rarityStyles[rarity] || rarityStyles.COMMON || { label: rarity, color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 };
+}
+
+function getRarityLabel(rarity) {
+  return getRarityStyle(rarity).label || rarity;
+}
 
 const state = {
   width: 0,
@@ -191,7 +210,7 @@ function openDexDetail(type) {
   }
 
   dexDetailRarity.className = discovered ? `dex-rarity rarity-${type.rarity.toLowerCase()}` : "dex-rarity";
-  dexDetailRarity.textContent = discovered ? type.rarity : "?";
+  dexDetailRarity.textContent = discovered ? getRarityLabel(type.rarity) : "?";
   dexDetailName.textContent = discovered ? type.name : "???";
   dexDetailMeta.textContent = discovered ? `${entry.count}匹 / ${type.points}pt / 色違い ${entry.shiny}匹` : "未発見";
   dexDetailLead.textContent = discovered
@@ -761,8 +780,7 @@ function randomFishType(includeSpecial = true) {
   const weightedTypes = fishTypes.map((type) => {
     const difficultyGap = Math.max(0, type.catchDifficulty - state.rodLevel);
     const difficultyPenalty = 1 / (1 + difficultyGap * 1.3);
-    const rarityBoost =
-      type.rarity === "SSR" ? rod.rareBonus * 1.18 : type.rarity === "SR" ? rod.rareBonus : type.rarity === "R" ? rod.rareBonus * 0.45 : 0;
+    const rarityBoost = Math.max(0, (getRarityRank(type.rarity) - getRarityRank("UNCOMMON")) / 5) * rod.rareBonus;
     const feverBoost = feverActive ? feverSettings.rarityMultiplier[type.rarity] || 1 : 1;
     return {
       type,
@@ -902,7 +920,7 @@ function updateHud() {
 
 function renderDex() {
   const sortedFishTypes = [...fishTypes].sort((left, right) => {
-    const rarityDiff = (rarityRank[right.rarity] || 0) - (rarityRank[left.rarity] || 0);
+    const rarityDiff = getRarityRank(right.rarity) - getRarityRank(left.rarity);
     if (rarityDiff !== 0) return rarityDiff;
     const pointDiff = right.points - left.points;
     if (pointDiff !== 0) return pointDiff;
@@ -943,7 +961,7 @@ function renderDex() {
 
       const rarity = document.createElement("div");
       rarity.className = `dex-rarity rarity-${type.rarity.toLowerCase()}`;
-      rarity.textContent = type.rarity;
+      rarity.textContent = getRarityLabel(type.rarity);
 
       const meta = document.createElement("div");
       meta.className = "dex-meta";
@@ -1037,7 +1055,7 @@ function describeReel(reel) {
 }
 
 function describeBait(bait) {
-  const highRare = Math.round(((bait.rarityMultiplier.SSR || bait.rarityMultiplier.SR) - 1) * 100);
+  const highRare = Math.round(((bait.rarityMultiplier.MYTHIC || bait.rarityMultiplier.LEGENDARY || bait.rarityMultiplier.EPIC || 1) - 1) * 100);
   return highRare ? `高レア出現 ${highRare > 0 ? "+" : ""}${highRare}%` : "標準の出現率";
 }
 
@@ -1264,7 +1282,7 @@ function updateMissions(type, salePrice, size, shiny = false) {
     if (def.kind === "money") {
       mission.progress += salePrice;
     }
-    if (def.kind === "rare" && type.rarity !== "C") {
+    if (def.kind === "rare" && getRarityRank(type.rarity) >= getRarityRank("RARE")) {
       mission.progress += 1;
     }
     if (def.kind === "spotCount" && state.spotId === def.spotId) {
@@ -1273,7 +1291,7 @@ function updateMissions(type, salePrice, size, shiny = false) {
     if (def.kind === "sizeCatch" && size?.label === def.sizeLabel) {
       mission.progress += 1;
     }
-    if (def.kind === "rarityCount" && (rarityRank[type.rarity] || 0) >= (rarityRank[def.rarity] || 0)) {
+    if (def.kind === "rarityCount" && getRarityRank(type.rarity) >= getRarityRank(def.rarity)) {
       mission.progress += 1;
     }
     if (def.kind === "fishCount" && type.name === def.fishName) {
@@ -1519,7 +1537,7 @@ function catchFish() {
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  playSfx(fish.shiny || fish.type.rarity === "SSR" ? "catch-ssr" : "catch");
+  playSfx(fish.shiny || getRarityRank(fish.type.rarity) >= getRarityRank("MYTHIC") ? "catch-ssr" : "catch");
   const totalBonus = missionReward + rewardTotal;
   const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
   const shinyText = fish.shiny ? "色違い! " : "";
@@ -2102,8 +2120,10 @@ function fillRoundedRect(x, y, width, height, radius) {
 
 function drawShowcase() {
   if (!state.showcaseFish) return;
-  const style = rarityStyles[state.showcaseFish.rarity];
-  const isSsr = state.showcaseFish.rarity === "SSR";
+  const style = getRarityStyle(state.showcaseFish.rarity);
+  const rarityPower = getRarityRank(state.showcaseFish.rarity);
+  const isMythic = rarityPower >= getRarityRank("MYTHIC");
+  const isLegendary = rarityPower >= getRarityRank("LEGENDARY");
   const isStar = Boolean(state.showcaseFish.isStar);
   const isShiny = state.showcaseShiny && !isStar;
   const sizeInfo = state.showcaseSize || sizeTiers[1];
@@ -2115,13 +2135,13 @@ function drawShowcase() {
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = (isShiny ? 0.82 : isStar ? 0.64 : isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
+  ctx.globalAlpha = (isShiny ? 0.82 : isStar ? 0.64 : isMythic ? 0.76 : isLegendary ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();
 
   ctx.save();
-  if (isSsr || isStar || isShiny) {
+  if (isMythic || isStar || isShiny) {
     const flash = Math.max(0, 1 - progress * 4.2);
     if (flash > 0) {
       ctx.globalAlpha = flash * (isShiny ? 0.88 : isStar ? 0.52 : 0.72);
@@ -2171,7 +2191,7 @@ function drawShowcase() {
   ctx.ellipse(state.width * 0.5, y + size * 0.02, size * 2.45, size * 1.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (state.showcaseFish.rarity !== "C" || isShiny || isStar) {
+  if (rarityPower >= getRarityRank("UNCOMMON") || isShiny || isStar) {
     const particleStyle = isStar
       ? { ...style, color: "#ffe84d", particles: 72 }
       : isShiny
@@ -2198,7 +2218,7 @@ function drawShowcase() {
     ctx.restore();
   }
 
-  if (isSsr) {
+  if (isMythic) {
     ctx.globalAlpha = fade * 0.58;
     ctx.strokeStyle = "rgba(255,255,255,0.82)";
     ctx.lineWidth = 3;
@@ -2218,13 +2238,15 @@ function drawShowcase() {
   ctx.fill();
   drawFishBody(state.showcaseFish, state.width * 0.5, y, size, 1, isShiny);
 
-  ctx.fillStyle = isShiny ? "#f4b900" : style.color;
-  fillRoundedRect(state.width * 0.5 - size * 0.46, y + size * 0.66, size * 0.92, size * 0.3, 8);
-  ctx.fillStyle = "#fff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `900 ${Math.max(18, Math.min(30, state.width * 0.06))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(isShiny ? "色違い" : state.showcaseFish.rarity, state.width * 0.5, y + size * 0.81);
+  const rarityLabel = isShiny ? "色違い" : getRarityLabel(state.showcaseFish.rarity);
+  const badgeWidth = Math.max(size * 0.92, ctx.measureText(rarityLabel).width + 28);
+  ctx.fillStyle = isShiny ? "#f4b900" : style.color;
+  fillRoundedRect(state.width * 0.5 - badgeWidth * 0.5, y + size * 0.66, badgeWidth, size * 0.3, 8);
+  ctx.fillStyle = "#fff";
+  ctx.fillText(rarityLabel, state.width * 0.5, y + size * 0.81);
 
   ctx.fillStyle = "#102033";
   ctx.textAlign = "center";

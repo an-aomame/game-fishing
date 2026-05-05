@@ -444,32 +444,45 @@ button {
   transform: translateY(1px);
 }
 
-.dex-card.rarity-card-ssr {
+.dex-card.rarity-card-mythic,
+.dex-card.rarity-card-secret {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(246, 228, 255, 0.9) 52%, rgba(233, 214, 255, 0.94));
   border-color: rgba(196, 77, 242, 0.42);
   box-shadow: 0 10px 26px rgba(157, 64, 201, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-.dex-card.rarity-card-ssr .dex-art {
+.dex-card.rarity-card-secret {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(228, 232, 255, 0.92) 44%, rgba(255, 217, 246, 0.95));
+  border-color: rgba(255, 91, 214, 0.46);
+  box-shadow: 0 12px 32px rgba(255, 91, 214, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+}
+
+.dex-card.rarity-card-mythic .dex-art,
+.dex-card.rarity-card-secret .dex-art {
   background:
     radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.95), rgba(247, 214, 255, 0.88) 42%, rgba(196, 77, 242, 0.2) 100%);
   border: 1px solid rgba(196, 77, 242, 0.16);
 }
 
-.dex-card.rarity-card-ssr .dex-name {
+.dex-card.rarity-card-mythic .dex-name,
+.dex-card.rarity-card-secret .dex-name {
   color: #5b2e7a;
 }
 
-.dex-card.rarity-card-ssr .dex-meta {
+.dex-card.rarity-card-mythic .dex-meta,
+.dex-card.rarity-card-secret .dex-meta {
   color: #7e5a98;
 }
 
-.dex-card.rarity-card-ssr .dex-complete {
+.dex-card.rarity-card-mythic .dex-complete,
+.dex-card.rarity-card-secret .dex-complete {
   border-color: rgba(196, 77, 242, 0.2);
 }
 
-.dex-card.rarity-card-ssr .dex-size.is-caught {
+.dex-card.rarity-card-mythic .dex-size.is-caught,
+.dex-card.rarity-card-secret .dex-size.is-caught {
   background: #b04ae4;
   border-color: rgba(109, 34, 151, 0.42);
   box-shadow: inset 0 -2px 0 rgba(109, 34, 151, 0.24);
@@ -706,28 +719,43 @@ button {
   font-weight: 900;
   justify-self: start;
   line-height: 1;
-  min-width: 34px;
+  min-width: 56px;
   padding: 5px 8px;
   text-align: center;
 }
 
-.rarity-c {
+.rarity-common {
   background: #6f8798;
 }
 
-.rarity-r {
+.rarity-uncommon {
+  background: #3d9b5f;
+  box-shadow: 0 0 12px rgba(61, 155, 95, 0.3);
+}
+
+.rarity-rare {
   background: #2f8fcb;
   box-shadow: 0 0 14px rgba(47, 143, 203, 0.34);
 }
 
-.rarity-sr {
+.rarity-epic {
+  background: #8e65d8;
+  box-shadow: 0 0 16px rgba(142, 101, 216, 0.42);
+}
+
+.rarity-legendary {
   background: #d68a18;
   box-shadow: 0 0 18px rgba(255, 205, 84, 0.52);
 }
 
-.rarity-ssr {
+.rarity-mythic {
   background: #c44df2;
   box-shadow: 0 0 20px rgba(240, 136, 255, 0.62);
+}
+
+.rarity-secret {
+  background: linear-gradient(135deg, #252142, #d92da4 55%, #fff06a);
+  box-shadow: 0 0 24px rgba(255, 91, 214, 0.72);
 }
 
 .dex-meta {
