@@ -1103,14 +1103,59 @@ function getCompletedMissionCount() {
   return missionDefs.filter((def) => state.missions[def.id]?.completed).length;
 }
 
+function isSpotUnlocked(spotId) {
+  const spot = fishingSpots.find((item) => item.id === spotId);
+  return !spot || state.rodLevel >= spot.unlockRodLevel;
+}
+
+function isMissionSpoilerHidden(def) {
+  if (state.missions[def.id]?.completed) return false;
+
+  if (def.spotId && !isSpotUnlocked(def.spotId)) {
+    return true;
+  }
+
+  if (def.fishName && getCollectionCount(def.fishName) <= 0) {
+    return true;
+  }
+
+  if (def.fishNames?.some((name) => def.label.includes(name) && getCollectionCount(name) <= 0)) {
+    return true;
+  }
+
+  return (def.fishNames || []).some((name) => {
+    const type = fishTypes.find((fishType) => fishType.name === name);
+    return type?.recommendedSpot && !isSpotUnlocked(type.recommendedSpot);
+  });
+}
+
+function getMissionDisplay(def) {
+  if (!isMissionSpoilerHidden(def)) {
+    return {
+      hidden: false,
+      label: def.label,
+      badge: missionKindLabels[def.kind] || "任務",
+      reward: `${def.reward}円`,
+    };
+  }
+
+  return {
+    hidden: true,
+    label: "まだ見ぬ任務",
+    badge: "未開示",
+    reward: "???円",
+  };
+}
+
 function renderMissions() {
   missionCount.textContent = `${getCompletedMissionCount()} / ${missionDefs.length} 完了`;
   missionList.replaceChildren(
     ...missionDefs.map((def) => {
       const progress = getMissionCardProgress(def);
       const completed = Boolean(state.missions[def.id]?.completed);
+      const display = getMissionDisplay(def);
       const card = document.createElement("article");
-      card.className = `mission-card${completed ? " is-done" : ""}`;
+      card.className = `mission-card${completed ? " is-done" : ""}${display.hidden ? " is-secret" : ""}`;
 
       const head = document.createElement("div");
       head.className = "mission-card-head";
@@ -1118,26 +1163,26 @@ function renderMissions() {
       const titleWrap = document.createElement("div");
       const badge = document.createElement("span");
       badge.className = "mission-kind";
-      badge.textContent = missionKindLabels[def.kind] || "任務";
+      badge.textContent = display.badge;
       const title = document.createElement("h3");
-      title.textContent = def.label;
+      title.textContent = display.label;
       titleWrap.append(badge, title);
 
       const reward = document.createElement("div");
       reward.className = "mission-reward";
-      reward.textContent = `${def.reward}円`;
+      reward.textContent = display.reward;
 
       head.append(titleWrap, reward);
 
       const meter = document.createElement("div");
       meter.className = "mission-meter";
       const fill = document.createElement("span");
-      fill.style.width = `${Math.max(6, (progress / def.target) * 100)}%`;
+      fill.style.width = display.hidden ? "6%" : `${Math.max(6, (progress / def.target) * 100)}%`;
       meter.append(fill);
 
       const meta = document.createElement("div");
       meta.className = "mission-meta";
-      meta.textContent = completed ? "達成済み" : `${progress} / ${def.target}`;
+      meta.textContent = display.hidden ? "ゲームを進めると内容が判明" : completed ? "達成済み" : `${progress} / ${def.target}`;
 
       card.append(head, meter, meta);
       return card;
@@ -1153,7 +1198,9 @@ function updateMissionSummary() {
   }
 
   const progress = getMissionCardProgress(openMission);
-  missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / 任務 ${getCompletedMissionCount()}/${missionDefs.length} / ${openMission.label} ${progress}/${openMission.target}`;
+  const display = getMissionDisplay(openMission);
+  const missionText = display.hidden ? "未開示の任務" : `${display.label} ${progress}/${openMission.target}`;
+  missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / 任務 ${getCompletedMissionCount()}/${missionDefs.length} / ${missionText}`;
 }
 
 function updateMissions(type, salePrice, size, shiny = false) {
