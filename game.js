@@ -582,6 +582,7 @@ function syncBgm(forceRestart = false) {
 }
 
 function unlockAudio() {
+  const wasUnlocked = state.audio.unlocked;
   state.audio.unlocked = true;
   const context = ensureAudioContext();
   if (!context) {
@@ -590,10 +591,10 @@ function unlockAudio() {
   }
 
   if (context.state === "suspended") {
-    context.resume().then(() => syncBgm(true)).catch(() => {});
+    context.resume().then(() => syncBgm(!wasUnlocked)).catch(() => {});
     return;
   }
-  syncBgm(true);
+  syncBgm(!wasUnlocked);
 }
 
 function startMusic() {
