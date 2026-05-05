@@ -541,8 +541,12 @@ function syncBgm(forceRestart = false) {
     return;
   }
 
+  if (!state.audio.unlocked) {
+    return;
+  }
+
   const context = ensureAudioContext();
-  if (!context || !state.audio.unlocked) {
+  if (!context) {
     return;
   }
 
@@ -565,9 +569,10 @@ function unlockAudio() {
   }
 
   if (context.state === "suspended") {
-    context.resume().catch(() => {});
+    context.resume().then(() => syncBgm(true)).catch(() => {});
+    return;
   }
-  syncBgm();
+  syncBgm(true);
 }
 
 function toggleMusic() {
@@ -1873,7 +1878,15 @@ missionTab.addEventListener("click", () => {
   unlockAudio();
   showView("mission");
 });
-musicToggleButton.addEventListener("click", toggleMusic);
+musicToggleButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  toggleMusic();
+});
+musicToggleButton.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  toggleMusic();
+});
 playTab.addEventListener("click", () => {
   unlockAudio();
   showView("game");
