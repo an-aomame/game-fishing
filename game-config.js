@@ -1,5 +1,5 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v2.1.0",
+  version: "v2.1.1",
   rarityStyles: {
     STAR: { label: "STAR", color: "#ffd94d", glow: "rgba(255, 236, 112, 0.82)", particles: 34 },
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
@@ -114,6 +114,18 @@ window.GAME_CONFIG = Object.freeze({
     },
   ],
   bgmThemes: {
+    menu: {
+      tempo: 132,
+      leadType: "square",
+      padType: "triangle",
+      leadGain: 0.032,
+      padGain: 0.018,
+      lead: [
+        ["C5"], ["E5"], ["G5"], ["C6"], ["B5"], ["G5"], ["E5"], [],
+        ["D5"], ["F5"], ["A5"], ["D6"], ["C6"], ["A5"], ["F5"], [],
+      ],
+      pad: [["C3"], [], ["G3"], [], ["F3"], [], ["G3"], []],
+    },
     pier: {
       tempo: 92,
       leadType: "triangle",

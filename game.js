@@ -503,7 +503,7 @@ function scheduleBgm() {
     return;
   }
 
-  const themeId = getCurrentSpot().id;
+  const themeId = getBgmThemeId();
   const theme = bgmThemes[themeId] || bgmThemes.pier;
   const stepDuration = 60 / theme.tempo / 2;
   const lookAhead = 0.18;
@@ -530,6 +530,10 @@ function updateMusicButton() {
   musicToggleButton.classList.toggle("is-on", state.musicEnabled);
 }
 
+function getBgmThemeId() {
+  return state.view === "menu" ? "menu" : getCurrentSpot().id;
+}
+
 function syncBgm(forceRestart = false) {
   updateMusicButton();
   if (!state.musicEnabled) {
@@ -542,7 +546,7 @@ function syncBgm(forceRestart = false) {
     return;
   }
 
-  const themeId = getCurrentSpot().id;
+  const themeId = getBgmThemeId();
   if (forceRestart || state.audio.currentThemeId !== themeId) {
     state.audio.currentThemeId = themeId;
     state.audio.noteIndex = 0;
