@@ -576,26 +576,57 @@ function unlockAudio() {
   syncBgm(true);
 }
 
-function toggleMusic() {
-  if (state.musicEnabled && !state.audio.unlocked) {
-    unlockAudio();
+function startMusic() {
+  state.musicEnabled = true;
+  saveMusicEnabled();
+  state.audio.unlocked = true;
+
+  const context = ensureAudioContext();
+  if (!context) {
     updateMusicButton();
     return;
   }
 
-  state.musicEnabled = !state.musicEnabled;
-  saveMusicEnabled();
-  updateMusicButton();
+  state.audio.currentThemeId = "";
+  state.audio.noteIndex = 0;
+  state.audio.nextNoteTime = context.currentTime + 0.03;
 
-  if (!state.musicEnabled) {
-    state.audio.currentThemeId = "";
-    if (state.audio.context && state.audio.context.state === "running") {
-      state.audio.context.suspend().catch(() => {});
-    }
+  if (context.state === "suspended") {
+    context.resume().then(() => syncBgm(true)).catch(() => {});
+    updateMusicButton();
     return;
   }
 
-  unlockAudio();
+  syncBgm(true);
+}
+
+function stopMusic() {
+  state.musicEnabled = false;
+  saveMusicEnabled();
+  state.audio.currentThemeId = "";
+  updateMusicButton();
+
+  if (state.audio.context && state.audio.context.state === "running") {
+    state.audio.context.suspend().catch(() => {});
+  }
+}
+
+function toggleMusic() {
+  const context = state.audio.context;
+  const activeThemeId = getBgmThemeId();
+  const isPlayingCurrentTheme =
+    state.musicEnabled &&
+    state.audio.unlocked &&
+    context &&
+    context.state === "running" &&
+    state.audio.currentThemeId === activeThemeId;
+
+  if (isPlayingCurrentTheme) {
+    stopMusic();
+    return;
+  }
+
+  startMusic();
 }
 
 function handleMusicToggleEvent(event) {
