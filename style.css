@@ -179,6 +179,27 @@ button {
   padding: 0 18px;
 }
 
+#actionButton.is-bite {
+  animation: bite-button-pulse 0.34s ease-in-out infinite;
+  background: linear-gradient(180deg, #fff06a 0%, #ff7a3d 54%, #f03443 100%);
+  box-shadow:
+    0 0 0 5px rgba(255, 240, 106, 0.34),
+    0 0 34px rgba(255, 96, 62, 0.68);
+  color: #4b180f;
+  transform-origin: center;
+}
+
+@keyframes bite-button-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.11);
+  }
+}
+
 .menu-bar {
   gap: 8px;
   min-height: 54px;

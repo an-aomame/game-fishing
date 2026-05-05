@@ -150,6 +150,7 @@ const state = {
   ambientFish: [],
   phaseTimer: 0,
   biteTimer: 0,
+  biteSignalTimer: 0,
   showcaseTimer: 0,
   ripples: [],
   collection: loadCollection(),
@@ -479,8 +480,9 @@ function playSfx(kind) {
   }
 
   if (kind === "bite") {
-    playSfxTone(now, 980, 0.08, "triangle", 0.05, 440);
-    playSfxTone(now + 0.05, 620, 0.12, "sine", 0.035, 240);
+    playSfxTone(now, 1180, 0.07, "square", 0.045, 820);
+    playSfxTone(now + 0.06, 1540, 0.08, "triangle", 0.05, 920);
+    playSfxTone(now + 0.14, 760, 0.16, "sine", 0.042, 260);
     return;
   }
 
@@ -868,6 +870,7 @@ function resetGame() {
   state.phase = "idle";
   state.phaseTimer = 0;
   state.biteTimer = 0;
+  state.biteSignalTimer = 0;
   state.showcaseTimer = 0;
   state.targetFish = null;
   state.showcaseFish = null;
@@ -1383,6 +1386,31 @@ function buyBait(id) {
 function setMessage(text, buttonText) {
   messageEl.textContent = text;
   actionButton.textContent = buttonText;
+  updateActionButtonCue();
+}
+
+function updateActionButtonCue() {
+  actionButton.classList.toggle("is-bite", state.view === "game" && state.phase === "bite");
+  actionButton.setAttribute("aria-label", state.phase === "bite" ? "いまだ 引く" : buttonTextFor(actionButton.textContent));
+}
+
+function buttonTextFor(text) {
+  return text ? text : "操作";
+}
+
+function triggerBiteSignal() {
+  state.biteSignalTimer = 0.48;
+  state.ripples.push(
+    { x: state.bobber.x, y: state.bobber.baseY, radius: 12, alpha: 1 },
+    { x: state.bobber.x, y: state.bobber.baseY, radius: 22, alpha: 0.72 }
+  );
+
+  if (!navigator.vibrate) return;
+  try {
+    navigator.vibrate([35, 25, 45]);
+  } catch (error) {
+    // iOS Safariなど、対応していない環境では視覚演出だけで知らせる。
+  }
 }
 
 function handleTap(event) {
@@ -1425,6 +1453,7 @@ function handleTap(event) {
 function castBobber() {
   state.phase = "casting";
   state.phaseTimer = 0.34;
+  state.biteSignalTimer = 0;
   state.bobber.visible = true;
   state.bobber.sunk = false;
   state.bobber.y = state.height - 52;
@@ -1441,6 +1470,7 @@ function startFever() {
 }
 
 function catchFish() {
+  state.biteSignalTimer = 0;
   const fish = state.targetFish;
   if (fish.type.isStar) {
     startFever();
@@ -1499,6 +1529,7 @@ function catchFish() {
 function missFish(text) {
   state.phase = "missed";
   state.phaseTimer = 0.85;
+  state.biteSignalTimer = 0;
   state.bobber.sunk = false;
   state.targetFish = null;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 10, alpha: 0.8 });
@@ -1510,6 +1541,8 @@ function update(delta) {
   updateFever(delta);
   updateHud();
   updateFishing(delta);
+  state.biteSignalTimer = Math.max(0, state.biteSignalTimer - delta);
+  updateActionButtonCue();
   updateAmbientFish(delta);
   updateRipples(delta);
   scheduleBgm();
@@ -1551,7 +1584,7 @@ function updateFishing(delta) {
       state.biteTimer = getBiteWindow(state.targetFish.type);
       state.bobber.sunk = true;
       state.bobber.y = state.bobber.baseY + 32;
-      state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 12, alpha: 1 });
+      triggerBiteSignal();
       playSfx("bite");
       setMessage("いまだ!", "引く");
     }
@@ -1634,8 +1667,63 @@ function draw() {
   drawWater();
   drawRod();
   drawForeground();
+  drawBiteCue();
   drawFeverOverlay();
   drawShowcase();
+}
+
+function drawBiteCue() {
+  if (state.phase !== "bite" || !state.bobber.visible) return;
+
+  const now = performance.now();
+  const flash = Math.max(0, Math.min(1, state.biteSignalTimer / 0.48));
+  const pulse = 0.5 + Math.sin(now * 0.026) * 0.5;
+  const x = state.bobber.x;
+  const y = state.bobber.baseY;
+  const baseRadius = Math.max(54, Math.min(96, state.width * 0.16));
+
+  ctx.save();
+  ctx.fillStyle = `rgba(255, 238, 112, ${0.1 + flash * 0.24 + pulse * 0.04})`;
+  ctx.fillRect(0, 0, state.width, state.height);
+
+  const glow = ctx.createRadialGradient(x, y, 6, x, y, baseRadius * 1.5);
+  glow.addColorStop(0, `rgba(255, 248, 164, ${0.55 + flash * 0.26})`);
+  glow.addColorStop(0.38, `rgba(255, 96, 88, ${0.2 + pulse * 0.18})`);
+  glow.addColorStop(1, "rgba(255, 96, 88, 0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(x, y, baseRadius * 1.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  for (let index = 0; index < 3; index += 1) {
+    const ringPhase = (now * 0.004 + index / 3) % 1;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${0.86 * (1 - ringPhase)})`;
+    ctx.lineWidth = 5 - ringPhase * 2;
+    ctx.beginPath();
+    ctx.ellipse(x, y, (baseRadius * (0.35 + ringPhase)) * 1.75, baseRadius * (0.35 + ringPhase) * 0.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  const labelY = Math.max(56, y - baseRadius * 1.25);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.font = `900 ${Math.max(34, Math.min(72, state.width * 0.14))}px ui-rounded, system-ui, sans-serif`;
+  ctx.strokeStyle = "rgba(86, 30, 18, 0.72)";
+  ctx.lineWidth = 8;
+  ctx.strokeText("いまだ!", x, labelY);
+  ctx.fillStyle = pulse > 0.52 ? "#fff8a4" : "#ffffff";
+  ctx.fillText("いまだ!", x, labelY);
+
+  const arrowY = labelY + Math.max(38, state.width * 0.08);
+  ctx.fillStyle = `rgba(255, 255, 255, ${0.72 + pulse * 0.26})`;
+  ctx.beginPath();
+  ctx.moveTo(x, arrowY + 26);
+  ctx.lineTo(x - 22, arrowY - 8);
+  ctx.lineTo(x + 22, arrowY - 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawFeverOverlay() {
