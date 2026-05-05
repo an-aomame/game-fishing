@@ -1734,12 +1734,70 @@ function drawWaterLines() {
 }
 
 function drawSpotDetails(detail) {
+  if (detail === "pier") {
+    ctx.fillStyle = "rgba(77, 54, 34, 0.36)";
+    const deckY = state.waterLine + 24;
+    ctx.fillRect(0, deckY, state.width * 0.28, 16);
+    ctx.fillRect(state.width * 0.72, deckY + 6, state.width * 0.28, 16);
+    for (let index = 0; index < 4; index += 1) {
+      const x = index < 2 ? state.width * (0.07 + index * 0.12) : state.width * (0.76 + (index - 2) * 0.12);
+      ctx.fillRect(x, deckY - 18 + (index % 2) * 6, 8, 58);
+    }
+  }
+
   if (detail === "reef") {
     ctx.fillStyle = "rgba(31, 61, 69, 0.42)";
     ctx.beginPath();
     ctx.ellipse(state.width * 0.18, state.waterLine + 42, 74, 18, -0.08, 0, Math.PI * 2);
     ctx.ellipse(state.width * 0.82, state.waterLine + 64, 96, 22, 0.12, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  if (detail === "estuary") {
+    const bank = ctx.createLinearGradient(0, state.waterLine + 14, 0, state.waterLine + 92);
+    bank.addColorStop(0, "rgba(104, 73, 38, 0.5)");
+    bank.addColorStop(1, "rgba(61, 54, 45, 0)");
+    ctx.fillStyle = bank;
+    ctx.beginPath();
+    ctx.moveTo(0, state.waterLine + 22);
+    ctx.quadraticCurveTo(state.width * 0.28, state.waterLine + 58, state.width * 0.54, state.waterLine + 18);
+    ctx.quadraticCurveTo(state.width * 0.78, state.waterLine - 4, state.width, state.waterLine + 34);
+    ctx.lineTo(state.width, state.waterLine + 96);
+    ctx.lineTo(0, state.waterLine + 88);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(39, 52, 35, 0.58)";
+    ctx.lineWidth = 3;
+    for (let index = 0; index < 18; index += 1) {
+      const x = (index * 47) % state.width;
+      const base = state.waterLine + 34 + (index % 4) * 6;
+      ctx.beginPath();
+      ctx.moveTo(x, base);
+      ctx.quadraticCurveTo(x + 7, base - 24 - (index % 3) * 8, x + 2, base - 48 - (index % 2) * 10);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(74, 55, 45, 0.48)";
+    ctx.lineWidth = 5;
+    for (let index = 0; index < 3; index += 1) {
+      const x = state.width * (0.18 + index * 0.32);
+      ctx.beginPath();
+      ctx.moveTo(x, state.waterLine + 8);
+      ctx.lineTo(x + 8, state.waterLine + 86);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(51, 42, 48, 0.42)";
+    ctx.lineWidth = 2;
+    for (let index = 0; index < 3; index += 1) {
+      const x = state.width * (0.56 + index * 0.08);
+      const y = state.waterLine - 52 - index * 7;
+      ctx.beginPath();
+      ctx.moveTo(x - 11, y);
+      ctx.quadraticCurveTo(x, y - 8, x + 11, y);
+      ctx.stroke();
+    }
   }
 
   if (detail === "deep") {
@@ -1754,6 +1812,40 @@ function drawSpotDetails(detail) {
     ctx.lineTo(state.width * 0.44, state.waterLine);
     ctx.closePath();
     ctx.fill();
+  }
+
+  if (detail === "abyss") {
+    const trench = ctx.createLinearGradient(0, state.waterLine + 24, 0, state.height);
+    trench.addColorStop(0, "rgba(3, 12, 26, 0)");
+    trench.addColorStop(0.28, "rgba(2, 10, 23, 0.38)");
+    trench.addColorStop(1, "rgba(0, 4, 14, 0.86)");
+    ctx.fillStyle = trench;
+    ctx.beginPath();
+    ctx.moveTo(state.width * 0.22, state.waterLine + 42);
+    ctx.quadraticCurveTo(state.width * 0.46, state.waterLine + 98, state.width * 0.38, state.height);
+    ctx.lineTo(state.width * 0.68, state.height);
+    ctx.quadraticCurveTo(state.width * 0.58, state.waterLine + 104, state.width * 0.82, state.waterLine + 50);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(126,238,255,0.22)";
+    ctx.lineWidth = 2;
+    for (let index = 0; index < 7; index += 1) {
+      const x = state.width * (0.28 + index * 0.075);
+      ctx.beginPath();
+      ctx.moveTo(x, state.waterLine + 64 + (index % 2) * 18);
+      ctx.quadraticCurveTo(x - 24, state.height * 0.72, x + 8, state.height);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(126,238,255,0.24)";
+    for (let index = 0; index < 16; index += 1) {
+      const x = state.width * (0.18 + ((index * 0.137) % 0.68));
+      const y = state.waterLine + 70 + ((performance.now() * 0.018 + index * 37) % Math.max(80, state.height - state.waterLine - 100));
+      ctx.beginPath();
+      ctx.arc(x, y, 1.5 + (index % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
