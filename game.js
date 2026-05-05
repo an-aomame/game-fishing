@@ -156,6 +156,7 @@ const state = {
     noteIndex: 0,
     currentThemeId: "",
     unlocked: false,
+    lastMusicToggleAt: 0,
   },
 };
 
@@ -595,6 +596,17 @@ function toggleMusic() {
   }
 
   unlockAudio();
+}
+
+function handleMusicToggleEvent(event) {
+  event.preventDefault();
+  const now = performance.now();
+  if (now - state.audio.lastMusicToggleAt < 260) {
+    return;
+  }
+
+  state.audio.lastMusicToggleAt = now;
+  toggleMusic();
 }
 
 function getCurrentSpot() {
@@ -1878,10 +1890,9 @@ missionTab.addEventListener("click", () => {
   unlockAudio();
   showView("mission");
 });
-musicToggleButton.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
-  toggleMusic();
-});
+musicToggleButton.addEventListener("pointerdown", handleMusicToggleEvent);
+musicToggleButton.addEventListener("touchend", handleMusicToggleEvent);
+musicToggleButton.addEventListener("click", handleMusicToggleEvent);
 musicToggleButton.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();
