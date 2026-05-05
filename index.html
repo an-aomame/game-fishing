@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Tap Fishing</title>
-    <link rel="stylesheet" href="style.css?v=2.1.7">
+    <link rel="stylesheet" href="style.css?v=2.1.8">
   </head>
   <body>
     <main class="game-shell">
@@ -17,15 +17,15 @@
           <strong id="score">0</strong>
         </div>
         <div>
-          <span class="label">CAUGHT</span>
-          <strong id="caught">0</strong>
+          <span class="label">SPOT</span>
+          <strong id="spotName">桟橋</strong>
         </div>
         <div class="version">
           <span class="label">VERSION</span>
           <strong id="version">...</strong>
         </div>
         <button id="musicToggleButton" type="button" aria-label="BGMのオンオフ">BGM ON</button>
-        <button id="resetButton" type="button" aria-label="ゲームをリセット">↻</button>
+        <button id="menuButton" type="button" aria-label="メニューを開く">☰</button>
       </section>
 
       <canvas id="gameCanvas" aria-label="魚釣りゲーム画面"></canvas>
@@ -44,7 +44,7 @@
         <button id="spotTab" class="tab-button" type="button">場所</button>
         <button id="dexTab" class="tab-button" type="button">図鑑</button>
         <button id="shopTab" class="tab-button" type="button">店</button>
-        <button id="reloadButton" class="tab-button" type="button">更新</button>
+        <button id="menuTab" class="tab-button" type="button">メニュー</button>
       </nav>
 
       <section id="menuScreen" class="screen" aria-label="メニュー画面">
@@ -142,7 +142,7 @@
       </section>
     </main>
 
-    <script src="game-config.js?v=2.1.7"></script>
-    <script src="game.js?v=2.1.7"></script>
+    <script src="game-config.js?v=2.1.8"></script>
+    <script src="game.js?v=2.1.8"></script>
   </body>
 </html>

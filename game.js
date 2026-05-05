@@ -1,18 +1,18 @@
 const canvas = document.querySelector("#gameCanvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.querySelector("#score");
-const caughtEl = document.querySelector("#caught");
+const spotNameEl = document.querySelector("#spotName");
 const messageEl = document.querySelector("#message");
 const missionSummaryEl = document.querySelector("#missionSummary");
 const actionButton = document.querySelector("#actionButton");
-const resetButton = document.querySelector("#resetButton");
+const menuButton = document.querySelector("#menuButton");
 const versionEl = document.querySelector("#version");
 const playTab = document.querySelector("#playTab");
 const missionTab = document.querySelector("#missionTab");
 const spotTab = document.querySelector("#spotTab");
 const dexTab = document.querySelector("#dexTab");
 const shopTab = document.querySelector("#shopTab");
-const reloadButton = document.querySelector("#reloadButton");
+const menuTab = document.querySelector("#menuTab");
 const menuScreen = document.querySelector("#menuScreen");
 const missionScreen = document.querySelector("#missionScreen");
 const dexScreen = document.querySelector("#dexScreen");
@@ -150,6 +150,7 @@ const state = {
   collection: loadCollection(),
   missions: loadMissions(),
   musicEnabled: loadMusicEnabled(),
+  returnView: "game",
   audio: {
     context: null,
     masterGain: null,
@@ -312,7 +313,6 @@ function fullResetProgress() {
 }
 
 function reloadLatest() {
-  sessionStorage.setItem("tapFishingReloadedWithMusic", state.musicEnabled ? "on" : "off");
   const url = new URL(window.location.href);
   url.searchParams.set("refresh", Date.now().toString());
   window.location.replace(url.toString());
@@ -677,6 +677,9 @@ function getCurrentTitle() {
 
 function showView(view) {
   state.view = view;
+  if (view === "menu" || view === "game") {
+    state.returnView = view;
+  }
   menuScreen.classList.toggle("is-hidden", view !== "menu");
   missionScreen.classList.toggle("is-hidden", view !== "mission");
   dexScreen.classList.toggle("is-hidden", view !== "dex");
@@ -687,6 +690,7 @@ function showView(view) {
   spotTab.classList.toggle("is-active", view === "spot");
   dexTab.classList.toggle("is-active", view === "dex");
   shopTab.classList.toggle("is-active", view === "shop");
+  menuTab.classList.toggle("is-active", view === "menu");
 
   if (view === "mission") {
     renderMissions();
@@ -703,6 +707,15 @@ function showView(view) {
   }
 
   syncBgm();
+}
+
+function showPanel(view, returnView = state.view === "menu" ? "menu" : "game") {
+  state.returnView = returnView;
+  showView(view);
+}
+
+function closePanel() {
+  showView(state.returnView || "game");
 }
 
 function resizeCanvas() {
@@ -859,7 +872,7 @@ function resetGame() {
 
 function updateHud() {
   scoreEl.textContent = `${state.money}`;
-  caughtEl.textContent = String(state.caughtCount);
+  spotNameEl.textContent = getCurrentSpot().name;
   versionEl.textContent = GAME_VERSION;
   if (state.feverTimer > 0) {
     missionSummaryEl.textContent = `FEVER ${Math.ceil(state.feverTimer)}秒 / レア魚と大物の気配アップ`;
@@ -1040,6 +1053,7 @@ function selectSpot(spotId) {
   state.spotId = spotId;
   saveEconomy();
   makeAmbientFish();
+  updateHud();
   renderSpots();
   setMessage(`${spot.name}に移動した`, "投げる");
   syncBgm(true);
@@ -1927,10 +1941,13 @@ document.addEventListener("visibilitychange", () => {
 });
 canvas.addEventListener("pointerdown", handleTap);
 actionButton.addEventListener("pointerdown", handleTap);
-resetButton.addEventListener("click", resetGame);
+menuButton.addEventListener("click", () => {
+  unlockAudio();
+  showView("menu");
+});
 missionTab.addEventListener("click", () => {
   unlockAudio();
-  showView("mission");
+  showPanel("mission", "game");
 });
 musicToggleButton.addEventListener("pointerdown", handleMusicToggleEvent);
 musicToggleButton.addEventListener("touchend", handleMusicToggleEvent);
@@ -1954,49 +1971,52 @@ playTab.addEventListener("click", () => {
 });
 spotTab.addEventListener("click", () => {
   unlockAudio();
-  showView("spot");
+  showPanel("spot", "game");
 });
 dexTab.addEventListener("click", () => {
   unlockAudio();
-  showView("dex");
+  showPanel("dex", "game");
 });
 shopTab.addEventListener("click", () => {
   unlockAudio();
-  showView("shop");
+  showPanel("shop", "game");
 });
-reloadButton.addEventListener("click", reloadLatest);
+menuTab.addEventListener("click", () => {
+  unlockAudio();
+  showView("menu");
+});
 startButton.addEventListener("click", () => {
   unlockAudio();
   showView("game");
 });
 menuMissionButton.addEventListener("click", () => {
   unlockAudio();
-  showView("mission");
+  showPanel("mission", "menu");
 });
 menuSpotButton.addEventListener("click", () => {
   unlockAudio();
-  showView("spot");
+  showPanel("spot", "menu");
 });
 menuReloadButton.addEventListener("click", reloadLatest);
 menuDexButton.addEventListener("click", () => {
   unlockAudio();
-  showView("dex");
+  showPanel("dex", "menu");
 });
 menuShopButton.addEventListener("click", () => {
   unlockAudio();
-  showView("shop");
+  showPanel("shop", "menu");
 });
 fullResetButton.addEventListener("click", fullResetProgress);
-closeMissionButton.addEventListener("click", () => showView("game"));
-closeDexButton.addEventListener("click", () => showView("game"));
+closeMissionButton.addEventListener("click", closePanel);
+closeDexButton.addEventListener("click", closePanel);
 closeDexDetailButton.addEventListener("click", closeDexDetail);
 dexDetail.addEventListener("click", (event) => {
   if (event.target === dexDetail) {
     closeDexDetail();
   }
 });
-closeShopButton.addEventListener("click", () => showView("game"));
-closeSpotButton.addEventListener("click", () => showView("game"));
+closeShopButton.addEventListener("click", closePanel);
+closeSpotButton.addEventListener("click", closePanel);
 
 resizeCanvas();
 resetGame();
