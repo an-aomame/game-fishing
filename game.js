@@ -312,6 +312,7 @@ function fullResetProgress() {
 }
 
 function reloadLatest() {
+  sessionStorage.setItem("tapFishingReloadedWithMusic", state.musicEnabled ? "on" : "off");
   const url = new URL(window.location.href);
   url.searchParams.set("refresh", Date.now().toString());
   window.location.replace(url.toString());
@@ -531,7 +532,7 @@ function updateMusicButton() {
   const isPlayingCurrentTheme = isCurrentBgmPlaying();
   musicToggleButton.textContent = state.musicEnabled ? "BGM ON" : "BGM OFF";
   musicToggleButton.classList.toggle("is-on", state.musicEnabled);
-  menuMusicButton.textContent = isPlayingCurrentTheme ? "BGMを止める" : "BGMを鳴らす";
+  menuMusicButton.textContent = isPlayingCurrentTheme ? "BGMを止める" : state.musicEnabled ? "BGMを再開" : "BGMを鳴らす";
   menuMusicButton.classList.toggle("is-on", isPlayingCurrentTheme);
 }
 
@@ -540,18 +541,20 @@ function getBgmThemeId() {
 }
 
 function syncBgm(forceRestart = false) {
-  updateMusicButton();
   if (!state.musicEnabled) {
     state.audio.currentThemeId = "";
+    updateMusicButton();
     return;
   }
 
   if (!state.audio.unlocked) {
+    updateMusicButton();
     return;
   }
 
   const context = ensureAudioContext();
   if (!context) {
+    updateMusicButton();
     return;
   }
 
@@ -563,6 +566,7 @@ function syncBgm(forceRestart = false) {
   }
 
   scheduleBgm();
+  updateMusicButton();
 }
 
 function unlockAudio() {
