@@ -1177,7 +1177,8 @@ function renderMissions() {
       const meter = document.createElement("div");
       meter.className = "mission-meter";
       const fill = document.createElement("span");
-      fill.style.width = display.hidden ? "6%" : `${Math.max(6, (progress / def.target) * 100)}%`;
+      const progressRate = (progress / def.target) * 100;
+      fill.style.width = display.hidden || progress <= 0 ? "0%" : `${Math.max(6, progressRate)}%`;
       meter.append(fill);
 
       const meta = document.createElement("div");
