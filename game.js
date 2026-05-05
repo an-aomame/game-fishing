@@ -51,6 +51,7 @@ const spotList = document.querySelector("#spotList");
 
 const {
   version: GAME_VERSION,
+  shinyOdds,
   rarityStyles,
   rodUpgrades,
   floatUpgrades,
@@ -100,6 +101,7 @@ const missionKindLabels = {
   discovered: "図鑑",
   sizeComplete: "図鑑",
   fishSet: "伝説",
+  shinyCount: "色違い",
 };
 
 
@@ -140,6 +142,7 @@ const state = {
   showcaseFish: null,
   showcaseSize: null,
   showcasePrice: 0,
+  showcaseShiny: false,
   feverTimer: 0,
   wasFeverActive: false,
   ambientFish: [],
@@ -187,8 +190,12 @@ function openDexDetail(type) {
   dexDetailRarity.className = discovered ? `dex-rarity rarity-${type.rarity.toLowerCase()}` : "dex-rarity";
   dexDetailRarity.textContent = discovered ? type.rarity : "?";
   dexDetailName.textContent = discovered ? type.name : "???";
-  dexDetailMeta.textContent = discovered ? `${entry.count}匹 / ${type.points}pt` : "未発見";
-  dexDetailLead.textContent = discovered ? `${type.name}のことなら、わしに聞くとよいぞい。` : "まだ姿が確認できておらんのう。";
+  dexDetailMeta.textContent = discovered ? `${entry.count}匹 / ${type.points}pt / 色違い ${entry.shiny}匹` : "未発見";
+  dexDetailLead.textContent = discovered
+    ? entry.shiny
+      ? `色違いも確認済みじゃ! ${type.name}の記録としてはかなり特別じゃぞい。`
+      : `${type.name}のことなら、わしに聞くとよいぞい。`
+    : "まだ姿が確認できておらんのう。";
   dexDetailSpot.textContent = discovered ? recommendedSpot?.name || "不明" : "???";
   dexDetailTrend.textContent = discovered ? type.sizeHint || "まだ傾向は調査中じゃ。" : "???";
   dexDetailText.textContent = discovered
@@ -323,6 +330,7 @@ function normalizeCollectionEntry(entry) {
     return {
       count: entry,
       sizes: {},
+      shiny: 0,
     };
   }
 
@@ -330,6 +338,7 @@ function normalizeCollectionEntry(entry) {
     return {
       count: 0,
       sizes: {},
+      shiny: 0,
     };
   }
 
@@ -341,6 +350,7 @@ function normalizeCollectionEntry(entry) {
   return {
     count: Number.isFinite(entry.count) ? entry.count : 0,
     sizes: normalizedSizes,
+    shiny: Number.isFinite(entry.shiny) ? entry.shiny : 0,
   };
 }
 
@@ -832,11 +842,13 @@ function makeShadow(index) {
 function makeTargetFish() {
   const type = randomFishType();
   const size = type.isStar ? sizeTiers[1] : randomFishSize();
+  const shiny = !type.isStar && Math.floor(Math.random() * shinyOdds) === 0;
   const side = Math.random() > 0.5 ? -1 : 1;
   const startX = state.bobber.x + side * Math.max(state.width * 0.3, 180);
   return {
     type,
     size,
+    shiny,
     x: startX,
     y: state.bobber.baseY + 62 + Math.random() * 42,
     targetX: state.bobber.x + (Math.random() - 0.5) * 24,
@@ -895,10 +907,11 @@ function renderDex() {
     ...sortedFishTypes.map((type) => {
       const entry = getCollectionEntry(type.name);
       const count = entry.count;
+      const shinyCount = entry.shiny;
       const sizeComplete = count ? isSizeComplete(type.name) : false;
       const card = document.createElement("button");
       card.type = "button";
-      card.className = `dex-card rarity-card-${type.rarity.toLowerCase()}${count ? "" : " is-locked"}`;
+      card.className = `dex-card rarity-card-${type.rarity.toLowerCase()}${shinyCount ? " has-shiny" : ""}${count ? "" : " is-locked"}`;
 
       const art = document.createElement("div");
       art.className = "dex-art";
@@ -928,13 +941,20 @@ function renderDex() {
 
       const meta = document.createElement("div");
       meta.className = "dex-meta";
-      meta.textContent = count ? `${count}匹 / ${type.points}pt` : "未発見";
+      meta.textContent = count ? `${count}匹 / ${type.points}pt${shinyCount ? ` / 色違い${shinyCount}` : ""}` : "未発見";
 
       const complete = document.createElement("div");
       complete.className = `dex-complete${sizeComplete ? " is-done" : ""}${count ? "" : " is-locked"}`;
       complete.textContent = count ? (sizeComplete ? "COMP" : "SIZE") : "--";
 
       header.append(rarity, complete);
+
+      if (shinyCount) {
+        const shinyBadge = document.createElement("div");
+        shinyBadge.className = "dex-shiny-badge";
+        shinyBadge.textContent = "色違い";
+        header.append(shinyBadge);
+      }
 
       const sizes = document.createElement("div");
       sizes.className = "dex-sizes";
@@ -1136,7 +1156,7 @@ function updateMissionSummary() {
   missionSummaryEl.textContent = `称号: ${getCurrentTitle().name} / 任務 ${getCompletedMissionCount()}/${missionDefs.length} / ${openMission.label} ${progress}/${openMission.target}`;
 }
 
-function updateMissions(type, salePrice, size) {
+function updateMissions(type, salePrice, size, shiny = false) {
   let rewardTotal = 0;
   for (const def of missionDefs) {
     const mission = state.missions[def.id] || { progress: 0, completed: false };
@@ -1161,6 +1181,9 @@ function updateMissions(type, salePrice, size) {
       mission.progress += 1;
     }
     if (def.kind === "fishCount" && type.name === def.fishName) {
+      mission.progress += 1;
+    }
+    if (def.kind === "shinyCount" && shiny) {
       mission.progress += 1;
     }
     if (def.kind === "discovered") {
@@ -1296,6 +1319,7 @@ function handleTap(event) {
     state.showcaseFish = null;
     state.showcaseSize = null;
     state.showcasePrice = 0;
+    state.showcaseShiny = false;
     setMessage("タップで浮きを投げよう", "投げる");
     return;
   }
@@ -1332,6 +1356,7 @@ function catchFish() {
     state.showcaseFish = fish.type;
     state.showcaseSize = fish.size;
     state.showcasePrice = 0;
+    state.showcaseShiny = false;
     state.targetFish = null;
     state.bobber.sunk = false;
     state.bobber.visible = false;
@@ -1346,15 +1371,17 @@ function catchFish() {
   state.money += salePrice;
   const currentEntry = getCollectionEntry(fish.type.name);
   const firstTime = currentEntry.count === 0;
+  const shinyCount = currentEntry.shiny + (fish.shiny ? 1 : 0);
   state.collection[fish.type.name] = {
     count: currentEntry.count + 1,
     sizes: {
       ...currentEntry.sizes,
       [fish.size.label]: true,
     },
+    shiny: shinyCount,
   };
   const rewardTotal = updateRewards(fish.type, firstTime);
-  const missionReward = updateMissions(fish.type, salePrice, fish.size);
+  const missionReward = updateMissions(fish.type, salePrice, fish.size, fish.shiny);
   updateTitles();
   updateMissionSummary();
   saveCollection();
@@ -1364,14 +1391,16 @@ function catchFish() {
   state.showcaseFish = fish.type;
   state.showcaseSize = fish.size;
   state.showcasePrice = salePrice;
+  state.showcaseShiny = fish.shiny;
   state.targetFish = null;
   state.bobber.sunk = false;
   state.bobber.visible = false;
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
-  playSfx(fish.type.rarity === "SSR" ? "catch-ssr" : "catch");
+  playSfx(fish.shiny || fish.type.rarity === "SSR" ? "catch-ssr" : "catch");
   const totalBonus = missionReward + rewardTotal;
   const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
-  setMessage(`${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
+  const shinyText = fish.shiny ? "色違い! " : "";
+  setMessage(`${shinyText}${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
 }
 
 function missFish(text) {
@@ -1449,6 +1478,7 @@ function updateFishing(delta) {
       state.showcaseFish = null;
       state.showcaseSize = null;
       state.showcasePrice = 0;
+      state.showcaseShiny = false;
       setMessage("タップで浮きを投げよう", "投げる");
     }
   }
@@ -1618,9 +1648,20 @@ function drawFishShadow(fish, alpha) {
   }
 
   ctx.save();
+  if (fish.shiny) {
+    const shimmer = 0.35 + Math.sin(performance.now() * 0.009) * 0.12;
+    ctx.globalAlpha = Math.min(0.85, alpha + shimmer);
+    ctx.fillStyle = "rgba(255, 232, 103, 0.5)";
+    ctx.beginPath();
+    ctx.ellipse(fish.x, fish.y, size * 1.18, size * 0.48, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
   ctx.translate(fish.x, fish.y);
   ctx.scale(fish.direction, 1);
-  ctx.fillStyle = `rgba(4, 31, 51, ${alpha})`;
+  ctx.fillStyle = fish.shiny ? `rgba(77, 48, 6, ${Math.min(0.72, alpha + 0.14)})` : `rgba(4, 31, 51, ${alpha})`;
   ctx.beginPath();
   ctx.ellipse(0, 0, size, size * 0.34, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -1633,7 +1674,7 @@ function drawFishShadow(fish, alpha) {
   ctx.restore();
 }
 
-function drawFishBody(type, x, y, size, direction) {
+function drawFishBody(type, x, y, size, direction, shiny = false) {
   if (type.isStar) {
     drawStarBody(x, y, size * 0.78);
     return;
@@ -1645,7 +1686,11 @@ function drawFishBody(type, x, y, size, direction) {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(direction, 1);
+    if (shiny) {
+      ctx.filter = "hue-rotate(135deg) saturate(1.8) brightness(1.22)";
+    }
     ctx.drawImage(image, -imageSize * 0.5, -imageSize * 0.5, imageSize, imageSize);
+    ctx.filter = "none";
     ctx.restore();
     return;
   }
@@ -1654,7 +1699,7 @@ function drawFishBody(type, x, y, size, direction) {
   ctx.translate(x, y);
   ctx.scale(direction, 1);
 
-  ctx.fillStyle = type.color;
+  ctx.fillStyle = shiny ? "#ffe870" : type.color;
   ctx.beginPath();
   ctx.ellipse(0, 0, size, size * 0.38, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -1670,6 +1715,14 @@ function drawFishBody(type, x, y, size, direction) {
   ctx.beginPath();
   ctx.ellipse(size * 0.12, -size * 0.08, size * 0.34, size * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  if (shiny) {
+    ctx.strokeStyle = "rgba(255,255,255,0.82)";
+    ctx.lineWidth = Math.max(2, size * 0.035);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.05, size * 0.43, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
   ctx.fillStyle = "#102033";
   ctx.beginPath();
@@ -1751,6 +1804,7 @@ function drawShowcase() {
   const style = rarityStyles[state.showcaseFish.rarity];
   const isSsr = state.showcaseFish.rarity === "SSR";
   const isStar = Boolean(state.showcaseFish.isStar);
+  const isShiny = state.showcaseShiny && !isStar;
   const sizeInfo = state.showcaseSize || sizeTiers[1];
   const progress = 1 - state.showcaseTimer / 1.8;
   const pop = Math.min(1, progress * 4);
@@ -1759,20 +1813,20 @@ function drawShowcase() {
   const y = state.height * 0.48 + Math.sin(progress * Math.PI) * -20;
 
   ctx.save();
-  ctx.globalAlpha = (isStar ? 0.64 : isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
+  ctx.globalAlpha = (isShiny ? 0.82 : isStar ? 0.64 : isSsr ? 0.76 : state.showcaseFish.rarity === "SR" ? 0.68 : 0.58) * fade;
   ctx.fillStyle = "#071d2a";
   ctx.fillRect(0, 0, state.width, state.height);
   ctx.restore();
 
   ctx.save();
-  if (isSsr || isStar) {
+  if (isSsr || isStar || isShiny) {
     const flash = Math.max(0, 1 - progress * 4.2);
     if (flash > 0) {
-      ctx.globalAlpha = flash * (isStar ? 0.52 : 0.72);
+      ctx.globalAlpha = flash * (isShiny ? 0.88 : isStar ? 0.52 : 0.72);
       const flashGradient = ctx.createLinearGradient(0, 0, state.width, state.height);
       flashGradient.addColorStop(0, "rgba(255,255,255,0.98)");
-      flashGradient.addColorStop(0.45, isStar ? "rgba(255,238,128,0.82)" : "rgba(242,196,255,0.88)");
-      flashGradient.addColorStop(1, isStar ? "rgba(255,194,65,0.66)" : "rgba(118,65,255,0.78)");
+      flashGradient.addColorStop(0.45, isShiny ? "rgba(255,245,130,0.9)" : isStar ? "rgba(255,238,128,0.82)" : "rgba(242,196,255,0.88)");
+      flashGradient.addColorStop(1, isShiny ? "rgba(80,220,255,0.72)" : isStar ? "rgba(255,194,65,0.66)" : "rgba(118,65,255,0.78)");
       ctx.fillStyle = flashGradient;
       ctx.fillRect(0, 0, state.width, state.height);
     }
@@ -1780,15 +1834,15 @@ function drawShowcase() {
 
   ctx.globalAlpha = fade;
   const glow = ctx.createRadialGradient(state.width * 0.5, y, size * 0.2, state.width * 0.5, y, size * 2.4);
-  glow.addColorStop(0, style.glow);
+  glow.addColorStop(0, isShiny ? "rgba(255, 235, 78, 0.95)" : style.glow);
   glow.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = glow;
   ctx.beginPath();
   ctx.ellipse(state.width * 0.5, y + size * 0.02, size * 2.45, size * 1.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (state.showcaseFish.rarity !== "C") {
-    drawShowcaseParticles(style, progress, fade, state.width * 0.5, y, size * 1.42);
+  if (state.showcaseFish.rarity !== "C" || isShiny) {
+    drawShowcaseParticles(isShiny ? { ...style, color: "#ffe84d", particles: Math.max(style.particles, 44) } : style, progress, fade, state.width * 0.5, y, size * 1.42);
   }
 
   if (isSsr) {
@@ -1809,21 +1863,21 @@ function drawShowcase() {
   ctx.beginPath();
   ctx.ellipse(state.width * 0.5, y + size * 0.18, size * 1.76, size * 0.86, 0, 0, Math.PI * 2);
   ctx.fill();
-  drawFishBody(state.showcaseFish, state.width * 0.5, y, size, 1);
+  drawFishBody(state.showcaseFish, state.width * 0.5, y, size, 1, isShiny);
 
-  ctx.fillStyle = style.color;
+  ctx.fillStyle = isShiny ? "#f4b900" : style.color;
   fillRoundedRect(state.width * 0.5 - size * 0.46, y + size * 0.66, size * 0.92, size * 0.3, 8);
   ctx.fillStyle = "#fff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `900 ${Math.max(18, Math.min(30, state.width * 0.06))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(state.showcaseFish.rarity, state.width * 0.5, y + size * 0.81);
+  ctx.fillText(isShiny ? "色違い" : state.showcaseFish.rarity, state.width * 0.5, y + size * 0.81);
 
   ctx.fillStyle = "#102033";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `900 ${Math.max(30, Math.min(50, state.width * 0.095))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(isStar ? "FEVER TIME" : `${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
+  ctx.fillText(isStar ? "FEVER TIME" : `${isShiny ? "色違い " : ""}${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
   ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(16,32,51,0.72)";
   ctx.fillText(isStar ? `${feverSettings.duration}秒 レア出現UP` : `+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);

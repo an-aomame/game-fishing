@@ -1,5 +1,6 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v2.1.9",
+  version: "v2.2.0",
+  shinyOdds: 4096,
   rarityStyles: {
     STAR: { label: "STAR", color: "#ffd94d", glow: "rgba(255, 236, 112, 0.82)", particles: 34 },
     C: { label: "C", color: "#6f8798", glow: "rgba(210, 231, 238, 0.42)", particles: 8 },
@@ -239,6 +240,8 @@ window.GAME_CONFIG = Object.freeze({
     { id: "sizeCompAll", label: "全魚サイズコンプ", target: 26, reward: 40000, kind: "sizeComplete" },
     { id: "abyssLegends", label: "深淵三幻をすべて釣る", target: 3, reward: 22000, kind: "fishSet", fishNames: ["ホシクジラ", "アビスドラゴン", "トキノサカナ"] },
     { id: "allSsr", label: "SSRを全種類釣る", target: 7, reward: 30000, kind: "fishSet", fishNames: ["ヌシ", "コダマウオ", "ネコギョ", "ホシクジラ", "アビスドラゴン", "トキノサカナ", "リュウグウノツカイ"] },
+    { id: "shiny1", label: "色違いを1匹釣る", target: 1, reward: 4096, kind: "shinyCount" },
+    { id: "shiny3", label: "色違いを3匹釣る", target: 3, reward: 12288, kind: "shinyCount" },
   ],
   fishTypes: [
     { name: "ワカサギ", points: 10, shadow: 30, speed: 96, biteWindow: 0.92, color: "#dce8ec", image: "assets/fish/001.png", rarity: "C", catchWeight: 32, catchDifficulty: 0, description: "群れで泳ぐ小さな魚じゃ。動きは素直で、釣りの入り口にぴったりじゃな。", recommendedSpot: "pier", sizeHint: "小と中が多く、特大はかなり珍しいぞい。" },

@@ -393,6 +393,28 @@ button {
   box-shadow: inset 0 -2px 0 rgba(109, 34, 151, 0.24);
 }
 
+.dex-card.has-shiny {
+  border-color: rgba(244, 185, 0, 0.72);
+  box-shadow: 0 12px 30px rgba(244, 185, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+.dex-card.has-shiny .dex-art {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.96), rgba(255, 240, 122, 0.72) 44%, rgba(98, 218, 255, 0.22) 100%);
+  border-color: rgba(244, 185, 0, 0.42);
+}
+
+.dex-shiny-badge {
+  background: linear-gradient(135deg, #f4b900, #fff27a 48%, #67dfff);
+  border: 1px solid rgba(116, 82, 0, 0.22);
+  border-radius: 999px;
+  color: #4b3200;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 8px;
+}
+
 .shop-card {
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid var(--line);
