@@ -565,9 +565,13 @@ function scheduleBgm() {
 
 function updateMusicButton() {
   const isPlayingCurrentTheme = isCurrentBgmPlaying();
-  musicToggleButton.textContent = state.musicEnabled ? "BGM ON" : "BGM OFF";
+  musicToggleButton.textContent = "♪";
+  musicToggleButton.setAttribute("aria-pressed", String(state.musicEnabled));
+  musicToggleButton.title = state.musicEnabled ? "BGMを止める" : "BGMを鳴らす";
   musicToggleButton.classList.toggle("is-on", state.musicEnabled);
-  menuMusicButton.textContent = isPlayingCurrentTheme ? "BGMを止める" : state.musicEnabled ? "BGMを再開" : "BGMを鳴らす";
+  menuMusicButton.textContent = "♪";
+  menuMusicButton.setAttribute("aria-pressed", String(isPlayingCurrentTheme));
+  menuMusicButton.title = isPlayingCurrentTheme ? "BGMを止める" : "BGMを鳴らす";
   menuMusicButton.classList.toggle("is-on", isPlayingCurrentTheme);
 }
 

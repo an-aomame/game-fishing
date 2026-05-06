@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Tap Fishing</title>
-    <link rel="stylesheet" href="style.css?v=2.4.13">
+    <link rel="stylesheet" href="style.css?v=2.4.14">
   </head>
   <body>
     <main class="game-shell">
@@ -20,11 +20,7 @@
           <span class="label">SPOT</span>
           <strong id="spotName">桟橋</strong>
         </div>
-        <div class="version">
-          <span class="label">VERSION</span>
-          <strong id="version">...</strong>
-        </div>
-        <button id="musicToggleButton" type="button" aria-label="BGMのオンオフ">BGM ON</button>
+        <button id="musicToggleButton" class="icon-button" type="button" aria-label="BGMのオンオフ" title="BGMのオンオフ">♪</button>
         <button id="menuButton" type="button" aria-label="メニューを開く">☰</button>
       </section>
 
@@ -50,6 +46,7 @@
       <section id="menuScreen" class="screen" aria-label="メニュー画面">
         <div class="menu-panel">
           <h1>Tap Fishing</h1>
+          <div class="title-preview" aria-hidden="true"></div>
           <button id="startButton" class="primary-button" type="button">釣りを始める</button>
           <div class="menu-grid">
             <button id="menuMissionButton" class="secondary-button" type="button">任務</button>
@@ -58,8 +55,12 @@
             <button id="menuDexButton" class="secondary-button" type="button">図鑑</button>
           </div>
           <div class="menu-system">
-            <button id="menuMusicButton" class="secondary-button menu-music-button" type="button">BGMを鳴らす</button>
-            <button id="menuReloadButton" class="secondary-button" type="button">最新版を読み込む</button>
+            <div class="menu-version">
+              <span>VERSION</span>
+              <strong id="version">...</strong>
+            </div>
+            <button id="menuMusicButton" class="secondary-button menu-icon-button menu-music-button" type="button" aria-label="BGMのオンオフ" title="BGMのオンオフ">♪</button>
+            <button id="menuReloadButton" class="secondary-button menu-icon-button" type="button" aria-label="最新版を読み込む" title="最新版を読み込む">↻</button>
             <button id="fullResetButton" class="danger-button" type="button">はじめから</button>
           </div>
         </div>
@@ -146,7 +147,7 @@
       </section>
     </main>
 
-    <script src="game-config.js?v=2.4.13"></script>
-    <script src="game.js?v=2.4.13"></script>
+    <script src="game-config.js?v=2.4.14"></script>
+    <script src="game.js?v=2.4.14"></script>
   </body>
 </html>

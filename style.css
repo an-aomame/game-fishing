@@ -78,10 +78,6 @@ button {
   min-width: 86px;
 }
 
-.hud .version {
-  min-width: 94px;
-}
-
 .label {
   color: var(--muted);
   font-size: 12px;
@@ -98,11 +94,6 @@ button {
   white-space: nowrap;
 }
 
-.hud .version strong {
-  color: var(--muted);
-  font-size: clamp(16px, 2.4vw, 22px);
-}
-
 #menuButton {
   align-items: center;
   background: var(--ink);
@@ -116,12 +107,20 @@ button {
   width: 48px;
 }
 
+.icon-button,
 #musicToggleButton {
+  align-items: center;
   background: rgba(16, 32, 51, 0.08);
+  border-radius: 999px;
   color: var(--ink);
-  min-height: 48px;
-  min-width: 92px;
-  padding: 0 12px;
+  display: grid;
+  font-size: 22px;
+  font-weight: 900;
+  height: 48px;
+  justify-items: center;
+  line-height: 1;
+  padding: 0;
+  width: 48px;
 }
 
 #musicToggleButton.is-on {
@@ -266,7 +265,31 @@ button {
 .menu-panel h1 {
   font-size: clamp(42px, 9vw, 82px);
   line-height: 0.95;
-  margin: 0 0 12px;
+  margin: 0;
+}
+
+.title-preview {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.74), rgba(255,255,255,0.28)),
+    radial-gradient(circle at 30% 38%, rgba(255, 203, 88, 0.42), transparent 28%),
+    linear-gradient(180deg, #91def1 0%, #dff8f7 48%, #2f94c8 49%, #0b5f91 100%);
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  border-radius: 8px;
+  min-height: clamp(74px, 16vw, 132px);
+  overflow: hidden;
+  position: relative;
+}
+
+.title-preview::after {
+  background: rgba(16, 32, 51, 0.28);
+  border-radius: 999px;
+  bottom: 26%;
+  content: "";
+  height: 18%;
+  left: 56%;
+  position: absolute;
+  transform: rotate(-8deg);
+  width: 28%;
 }
 
 .primary-button,
@@ -288,7 +311,43 @@ button {
 }
 
 .menu-system {
-  grid-template-columns: 1fr;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 52px 52px;
+}
+
+.menu-version {
+  background: rgba(16, 32, 51, 0.08);
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 2px;
+  min-height: 52px;
+  padding: 8px 10px;
+}
+
+.menu-version span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.menu-version strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.menu-icon-button {
+  border-radius: 999px;
+  font-size: 24px;
+  min-height: 52px;
+  min-width: 52px;
+  padding: 0;
+}
+
+.menu-system .danger-button {
+  grid-column: 1 / -1;
 }
 
 .secondary-button,
@@ -1044,13 +1103,12 @@ button {
   .hud {
     display: grid;
     gap: 6px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 0.9fr) 78px 42px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px 42px;
     min-height: 54px;
     padding: 8px;
   }
 
-  .hud div,
-  .hud .version {
+  .hud div {
     min-width: 0;
   }
 
@@ -1066,10 +1124,6 @@ button {
     font-size: 18px;
   }
 
-  .hud .version strong {
-    font-size: 14px;
-  }
-
   #menuButton {
     align-self: center;
     font-size: 22px;
@@ -1079,10 +1133,9 @@ button {
 
   #musicToggleButton {
     align-self: center;
-    font-size: 11px;
-    min-height: 42px;
-    min-width: 0;
-    padding: 0 6px;
+    font-size: 19px;
+    height: 42px;
+    width: 42px;
   }
 
   .status {
@@ -1127,6 +1180,19 @@ button {
   .menu-panel h1 {
     font-size: clamp(36px, 12vw, 58px);
     margin-bottom: 4px;
+  }
+
+  .title-preview {
+    min-height: 70px;
+  }
+
+  .menu-system {
+    grid-template-columns: minmax(0, 1fr) 48px 48px;
+  }
+
+  .menu-icon-button {
+    min-height: 48px;
+    min-width: 48px;
   }
 
   .primary-button,
@@ -1238,21 +1304,18 @@ button {
 
 @media (max-width: 360px) {
   .hud {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(58px, 0.82fr) 58px 38px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px 38px;
   }
 
   .hud strong {
     font-size: 19px;
   }
 
-  .hud .version strong {
-    font-size: 12px;
-  }
-
   #spotName {
     font-size: 15px;
   }
 
+  #musicToggleButton,
   #menuButton {
     height: 38px;
     width: 38px;
