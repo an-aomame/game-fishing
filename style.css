@@ -434,10 +434,10 @@ button {
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(7, 29, 42, 0.11);
   cursor: pointer;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 7px;
-  grid-template-rows: auto minmax(112px, 1fr) auto auto auto;
-  min-height: 236px;
+  min-height: 0;
   text-align: left;
   padding: 10px;
 }
@@ -685,6 +685,7 @@ button {
   background: rgba(16, 32, 51, 0.08);
   border-radius: 8px;
   display: flex;
+  flex: 0 0 auto;
   justify-content: center;
   overflow: hidden;
 }
@@ -1151,8 +1152,7 @@ button {
 
   .dex-card {
     gap: 6px;
-    grid-template-rows: auto minmax(96px, 1fr) auto auto auto;
-    min-height: 222px;
+    min-height: 0;
     padding: 8px;
   }
 
