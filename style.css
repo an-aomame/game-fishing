@@ -792,10 +792,13 @@ button {
 .dex-name {
   border-radius: 8px 8px 0 0;
   border-top: 1px solid rgba(16, 32, 51, 0.1);
+  padding-bottom: 3px;
   padding-top: 8px;
 }
 
 .dex-meta {
+  margin-top: -7px;
+  padding-bottom: 4px;
   padding-top: 2px;
 }
 
@@ -805,6 +808,7 @@ button {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: -7px;
   padding-bottom: 8px;
   padding-top: 8px;
 }
@@ -1158,6 +1162,11 @@ button {
     gap: 6px;
     min-height: 266px;
     padding: 8px;
+  }
+
+  .dex-meta,
+  .dex-sizes {
+    margin-top: -6px;
   }
 
   .dex-art img {
