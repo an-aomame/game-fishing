@@ -2252,20 +2252,28 @@ function drawShowcase() {
   const badgeFontSize = Math.max(14, Math.min(24, state.width * 0.045));
   ctx.font = `900 ${badgeFontSize}px ui-rounded, system-ui, sans-serif`;
   const rarityLabel = isShiny ? "色違い" : getRarityLabel(state.showcaseFish.rarity);
-  const badgeWidth = Math.max(size * 0.72, ctx.measureText(rarityLabel).width + 24);
+  const badgeWidth = Math.max(size * 0.72, ctx.measureText(rarityLabel).width + 28);
+  const badgeHeight = Math.max(28, badgeFontSize + 12);
+  const badgeY = Math.max(32, y - size * 0.96);
   ctx.fillStyle = isShiny ? "#f4b900" : style.color;
-  fillRoundedRect(state.width * 0.5 - badgeWidth * 0.5, y + size * 0.66, badgeWidth, Math.max(28, size * 0.24), 8);
+  fillRoundedRect(state.width * 0.5 - badgeWidth * 0.5, badgeY, badgeWidth, badgeHeight, 8);
   ctx.fillStyle = "#fff";
-  ctx.fillText(rarityLabel, state.width * 0.5, y + size * 0.78);
+  ctx.fillText(rarityLabel, state.width * 0.5, badgeY + badgeHeight * 0.52);
+
+  const panelWidth = Math.min(state.width * 0.88, Math.max(size * 2.18, 250));
+  const panelHeight = Math.max(76, Math.min(104, size * 0.62));
+  const panelY = Math.min(y + size * 1.02, state.height - panelHeight - 20);
+  ctx.fillStyle = "rgba(255,255,255,0.94)";
+  fillRoundedRect(state.width * 0.5 - panelWidth * 0.5, panelY, panelWidth, panelHeight, 10);
 
   ctx.fillStyle = "#102033";
   const titleText = isStar ? "FEVER TIME" : state.showcaseFish.name;
-  setFittedFont(titleText, state.width * 0.86, Math.max(34, Math.min(54, state.width * 0.1)), 28, 900);
-  ctx.fillText(titleText, state.width * 0.5, y + size * 1.16);
+  setFittedFont(titleText, panelWidth - 26, Math.max(32, Math.min(50, state.width * 0.092)), 25, 900);
+  ctx.fillText(titleText, state.width * 0.5, panelY + panelHeight * 0.38);
   const detailText = isStar ? `${feverSettings.duration}秒 フィーバー` : `${isShiny ? "色違い / " : ""}${sizeInfo.label}`;
-  setFittedFont(detailText, state.width * 0.78, Math.max(18, Math.min(26, state.width * 0.048)), 15, 800);
+  setFittedFont(detailText, panelWidth - 34, Math.max(17, Math.min(24, state.width * 0.044)), 14, 800);
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(detailText, state.width * 0.5, y + size * 1.43);
+  ctx.fillText(detailText, state.width * 0.5, panelY + panelHeight * 0.72);
   ctx.restore();
 }
 
