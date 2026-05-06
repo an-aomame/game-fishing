@@ -2260,20 +2260,22 @@ function drawShowcase() {
   ctx.fillStyle = "#fff";
   ctx.fillText(rarityLabel, state.width * 0.5, badgeY + badgeHeight * 0.52);
 
-  const panelWidth = Math.min(state.width * 0.88, Math.max(size * 2.18, 250));
-  const panelHeight = Math.max(76, Math.min(104, size * 0.62));
-  const panelY = Math.min(y + size * 1.02, state.height - panelHeight - 20);
-  ctx.fillStyle = "rgba(255,255,255,0.94)";
-  fillRoundedRect(state.width * 0.5 - panelWidth * 0.5, panelY, panelWidth, panelHeight, 10);
-
-  ctx.fillStyle = "#102033";
+  const captionY = Math.min(y + size * 1.18, state.height - 70);
   const titleText = isStar ? "FEVER TIME" : state.showcaseFish.name;
-  setFittedFont(titleText, panelWidth - 26, Math.max(32, Math.min(50, state.width * 0.092)), 25, 900);
-  ctx.fillText(titleText, state.width * 0.5, panelY + panelHeight * 0.38);
+  setFittedFont(titleText, state.width * 0.86, Math.max(34, Math.min(54, state.width * 0.096)), 26, 900);
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth = 7;
+  ctx.strokeText(titleText, state.width * 0.5, captionY);
+  ctx.fillStyle = "#102033";
+  ctx.fillText(titleText, state.width * 0.5, captionY);
   const detailText = isStar ? `${feverSettings.duration}秒 フィーバー` : `${isShiny ? "色違い / " : ""}${sizeInfo.label}`;
-  setFittedFont(detailText, panelWidth - 34, Math.max(17, Math.min(24, state.width * 0.044)), 14, 800);
-  ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(detailText, state.width * 0.5, panelY + panelHeight * 0.72);
+  setFittedFont(detailText, state.width * 0.72, Math.max(17, Math.min(24, state.width * 0.044)), 14, 800);
+  ctx.strokeStyle = "rgba(255,255,255,0.82)";
+  ctx.lineWidth = 5;
+  ctx.strokeText(detailText, state.width * 0.5, captionY + 34);
+  ctx.fillStyle = "rgba(16,32,51,0.74)";
+  ctx.fillText(detailText, state.width * 0.5, captionY + 34);
   ctx.restore();
 }
 
