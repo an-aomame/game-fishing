@@ -681,13 +681,14 @@ button {
 
 .dex-art {
   align-items: center;
-  aspect-ratio: 1.18;
   background: rgba(16, 32, 51, 0.08);
   border-radius: 8px;
   display: flex;
   flex: 0 0 auto;
+  height: clamp(112px, 24vw, 156px);
   justify-content: center;
   overflow: hidden;
+  width: 100%;
 }
 
 .dex-art img {
@@ -1159,6 +1160,10 @@ button {
   .dex-art img {
     height: 80%;
     width: 80%;
+  }
+
+  .dex-art {
+    height: clamp(96px, 28vw, 132px);
   }
 
   .dex-header-row {
