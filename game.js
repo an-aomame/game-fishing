@@ -993,7 +993,7 @@ function renderDex() {
       }
 
       card.addEventListener("click", () => openDexDetail(type));
-      card.append(art, header, name, meta, sizes);
+      card.append(header, art, name, meta, sizes);
       return card;
     })
   );

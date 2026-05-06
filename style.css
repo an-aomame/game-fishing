@@ -434,8 +434,9 @@ button {
   border-radius: 8px;
   cursor: pointer;
   display: grid;
-  gap: 6px;
-  min-height: 172px;
+  gap: 7px;
+  grid-template-rows: auto minmax(112px, 1fr) auto auto auto;
+  min-height: 236px;
   text-align: left;
   padding: 10px;
 }
@@ -504,10 +505,12 @@ button {
   border: 1px solid rgba(116, 82, 0, 0.22);
   border-radius: 999px;
   color: #4b3200;
+  flex: 0 0 auto;
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
   padding: 6px 8px;
+  white-space: nowrap;
 }
 
 .shop-card {
@@ -677,7 +680,7 @@ button {
 
 .dex-art {
   align-items: center;
-  aspect-ratio: 1;
+  aspect-ratio: 1.18;
   background: rgba(16, 32, 51, 0.08);
   border-radius: 8px;
   display: flex;
@@ -687,9 +690,9 @@ button {
 
 .dex-art img {
   display: block;
-  height: 92%;
+  height: 84%;
   object-fit: contain;
-  width: 92%;
+  width: 84%;
 }
 
 .dex-shadow {
@@ -710,18 +713,24 @@ button {
   display: flex;
   gap: 6px;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .dex-rarity {
   border-radius: 999px;
   color: #fff;
-  font-size: 13px;
+  flex: 0 1 auto;
+  font-size: 12px;
   font-weight: 900;
   justify-self: start;
   line-height: 1;
-  min-width: 56px;
-  padding: 5px 8px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 9px;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rarity-common {
@@ -798,6 +807,7 @@ button {
   border: 1px solid rgba(16, 32, 51, 0.12);
   border-radius: 999px;
   color: var(--muted);
+  flex: 0 0 auto;
   min-width: 52px;
   padding: 6px 8px;
 }
@@ -1115,8 +1125,35 @@ button {
   }
 
   .dex-card {
-    min-height: 150px;
+    gap: 6px;
+    grid-template-rows: auto minmax(96px, 1fr) auto auto auto;
+    min-height: 222px;
     padding: 8px;
+  }
+
+  .dex-art img {
+    height: 80%;
+    width: 80%;
+  }
+
+  .dex-header-row {
+    gap: 4px;
+  }
+
+  .dex-rarity {
+    font-size: 10px;
+    padding: 5px 6px;
+  }
+
+  .dex-complete {
+    font-size: 10px;
+    min-width: 42px;
+    padding: 6px 5px;
+  }
+
+  .dex-shiny-badge {
+    font-size: 10px;
+    padding: 6px 5px;
   }
 
   .dex-name {
