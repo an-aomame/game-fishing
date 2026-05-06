@@ -115,6 +115,8 @@ const missionKindOrder = ["基本", "進行", "場所", "魚種", "サイズ", "
 
 
 const fishImages = new Map();
+const fishShadowImage = new Image();
+fishShadowImage.src = `assets/gyoei.png?v=${GAME_VERSION}`;
 
 fishTypes.forEach((type) => {
   if (!type.image) return;
@@ -1980,6 +1982,15 @@ function drawFishShadow(fish, alpha) {
   ctx.translate(fish.x, fish.y);
   ctx.scale(fish.direction, 1);
   ctx.fillStyle = fish.shiny ? `rgba(77, 48, 6, ${Math.min(0.72, alpha + 0.14)})` : `rgba(4, 31, 51, ${alpha})`;
+  if (fishShadowImage.complete && fishShadowImage.naturalWidth > 0) {
+    const imageWidth = size * 2.55;
+    const imageHeight = size * 1.3;
+    ctx.globalAlpha = Math.min(0.86, fish.shiny ? alpha + 0.16 : alpha);
+    ctx.drawImage(fishShadowImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
+    ctx.restore();
+    return;
+  }
+
   ctx.beginPath();
   ctx.ellipse(0, 0, size, size * 0.34, 0, 0, Math.PI * 2);
   ctx.fill();
