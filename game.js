@@ -2293,12 +2293,17 @@ function drawRipples() {
 }
 
 function getRodGeometry() {
+  const now = performance.now();
+  const bitePull = state.phase === "bite" ? 1 : 0;
+  const nibblePull = state.phase === "nibble" ? 0.38 + Math.sin(now * 0.034) * 0.08 : 0;
+  const pull = Math.max(bitePull, nibblePull);
+  const shake = bitePull ? Math.sin(now * 0.052) * Math.max(1.5, state.width * 0.004) : 0;
   const gripX = state.width * 0.5;
   const gripY = state.height + 58;
-  const tipX = state.width * 0.5 + Math.min(168, state.width * 0.24);
-  const tipY = state.waterLine - Math.max(26, state.height * 0.08);
-  const controlX = state.width * 0.5 + Math.min(132, state.width * 0.19);
-  const controlY = state.height * 0.58;
+  const tipX = state.width * 0.5 + Math.min(168, state.width * 0.24) - pull * Math.min(34, state.width * 0.052) + shake;
+  const tipY = state.waterLine - Math.max(26, state.height * 0.08) + pull * Math.min(76, state.height * 0.15);
+  const controlX = state.width * 0.5 + Math.min(132, state.width * 0.19) - pull * Math.min(22, state.width * 0.035);
+  const controlY = state.height * 0.58 + pull * Math.min(62, state.height * 0.1);
 
   return { gripX, gripY, tipX, tipY, controlX, controlY };
 }
@@ -2315,13 +2320,16 @@ function drawFishingLine() {
   if (!state.bobber.visible) return;
   const { tipX, tipY } = getRodGeometry();
   const { bobberTop } = getBobberMetrics();
+  const isHooked = state.phase === "bite";
   const controlX = tipX + (state.bobber.x - tipX) * 0.34;
-  const controlY = Math.min(bobberTop - 12, tipY + Math.abs(state.bobber.x - tipX) * 0.22 + 18);
+  const controlY = isHooked
+    ? tipY + (bobberTop - tipY) * 0.52
+    : Math.min(bobberTop - 12, tipY + Math.abs(state.bobber.x - tipX) * 0.22 + 18);
 
   ctx.save();
   ctx.lineCap = "round";
-  ctx.strokeStyle = "rgba(244, 251, 255, 0.76)";
-  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = isHooked ? "rgba(255, 248, 188, 0.88)" : "rgba(244, 251, 255, 0.76)";
+  ctx.lineWidth = isHooked ? 2.8 : 2.2;
   ctx.beginPath();
   ctx.moveTo(tipX, tipY);
   ctx.quadraticCurveTo(controlX, controlY, state.bobber.x, bobberTop);
