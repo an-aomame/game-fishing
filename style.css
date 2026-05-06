@@ -373,6 +373,8 @@ button {
 }
 
 .dex-list {
+  align-items: start;
+  grid-auto-rows: auto;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
@@ -434,10 +436,11 @@ button {
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(7, 29, 42, 0.11);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
+  align-content: start;
+  display: grid;
   gap: 7px;
-  min-height: 0;
+  grid-template-rows: auto auto auto auto auto;
+  min-height: 294px;
   text-align: left;
   padding: 10px;
 }
@@ -1153,7 +1156,7 @@ button {
 
   .dex-card {
     gap: 6px;
-    min-height: 0;
+    min-height: 266px;
     padding: 8px;
   }
 
