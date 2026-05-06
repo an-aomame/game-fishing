@@ -1,5 +1,5 @@
 window.GAME_CONFIG = Object.freeze({
-  version: "v2.4.15",
+  version: "v2.4.16",
   shinyOdds: 4096,
   rarityStyles: {
     STAR: { label: "STAR", color: "#ffd94d", glow: "rgba(255, 236, 112, 0.82)", particles: 34 },
@@ -269,12 +269,12 @@ window.GAME_CONFIG = Object.freeze({
     { id: "starWhale2", label: "ホシクジラを2匹釣る", target: 2, reward: 7600, kind: "fishCount", fishName: "ホシクジラ" },
     { id: "timeFish1", label: "トキノサカナを1匹釣る", target: 1, reward: 12000, kind: "fishCount", fishName: "トキノサカナ" },
     { id: "discover20", label: "図鑑を20種埋める", target: 20, reward: 5200, kind: "discovered" },
-    { id: "discoverAll", label: "図鑑を全種埋める", target: 26, reward: 16000, kind: "discovered" },
+    { id: "discoverAll", label: "図鑑を全種埋める", target: 30, reward: 18000, kind: "discovered" },
     { id: "sizeComp10", label: "サイズコンプを10種達成", target: 10, reward: 7200, kind: "sizeComplete" },
     { id: "sizeComp20", label: "サイズコンプを20種達成", target: 20, reward: 18000, kind: "sizeComplete" },
-    { id: "sizeCompAll", label: "全魚サイズコンプ", target: 26, reward: 40000, kind: "sizeComplete" },
+    { id: "sizeCompAll", label: "全魚サイズコンプ", target: 30, reward: 46000, kind: "sizeComplete" },
     { id: "abyssLegends", label: "深淵三幻をすべて釣る", target: 3, reward: 22000, kind: "fishSet", fishNames: ["ホシクジラ", "アビスドラゴン", "トキノサカナ"] },
-    { id: "allSsr", label: "レジェンダリー以上を全種類釣る", target: 9, reward: 30000, kind: "fishSet", fishNames: ["ニジイロギョ", "ヌシ", "コダマウオ", "ネコギョ", "シーラカンス", "リュウグウノツカイ", "ホシクジラ", "アビスドラゴン", "トキノサカナ"] },
+    { id: "allSsr", label: "レジェンダリー以上を全種類釣る", target: 11, reward: 36000, kind: "fishSet", fishNames: ["ニジイロギョ", "ヌシ", "コダマウオ", "ネコギョ", "シーラカンス", "カミナリウオ", "リュウグウノツカイ", "ホシクジラ", "ユメミノサカナ", "アビスドラゴン", "トキノサカナ"] },
     { id: "shiny1", label: "色違いを1匹釣る", target: 1, reward: 4096, kind: "shinyCount" },
     { id: "shiny3", label: "色違いを3匹釣る", target: 3, reward: 12288, kind: "shinyCount" },
   ],
@@ -305,5 +305,9 @@ window.GAME_CONFIG = Object.freeze({
     { name: "ホシクジラ", points: 420, shadow: 128, speed: 34, biteWindow: 0.34, color: "#3f4ea8", rarity: "MYTHIC", catchWeight: 0.9, catchDifficulty: 4, description: "夜空を背負って泳ぐような巨大な魚影じゃ。出会いそのものが冒険の証じゃな。", recommendedSpot: "abyss", sizeHint: "大と特大が本命じゃ。小さめでも価値は十分すぎるほどあるぞい。" },
     { name: "アビスドラゴン", points: 520, shadow: 136, speed: 32, biteWindow: 0.32, color: "#7d4df2", rarity: "SECRET", catchWeight: 0.65, catchDifficulty: 4, description: "深淵の名を持つ、最難関級の魚じゃ。浮きが沈んだ瞬間、迷いは置いていくのじゃ。", recommendedSpot: "abyss", sizeHint: "特大は伝説級じゃ。装備とフィーバーを重ねて挑むのがよい。" },
     { name: "トキノサカナ", points: 800, shadow: 92, speed: 72, biteWindow: 0.28, color: "#fff08a", rarity: "SECRET", catchWeight: 0.28, catchDifficulty: 4, description: "一瞬だけ時間が止まったように見える幻魚じゃ。博士もまだ一度しか見ておらん。", recommendedSpot: "abyss", sizeHint: "サイズ以前に出会うことが難しい魚じゃ。全サイズ制覇は長い旅になるぞい。" },
+    { name: "アカツキダイ", points: 58, shadow: 66, speed: 72, biteWindow: 0.68, color: "#f27a52", image: "assets/fish/023.png", rarity: "UNCOMMON", catchWeight: 12, catchDifficulty: 1, description: "朝焼けのような色をまとった魚じゃ。河口の光がやわらかい時間に、ふっと姿を見せることがあるぞい。", recommendedSpot: "estuary", sizeHint: "小と中が多いが、大もほどよく混ざる。特大は夕焼け河口で粘るのじゃ。" },
+    { name: "ミズクラゲウオ", points: 125, shadow: 82, speed: 52, biteWindow: 0.56, color: "#92d8f0", image: "assets/fish/024.png", rarity: "EPIC", catchWeight: 5.2, catchDifficulty: 2, description: "水に溶けるような姿の、つかみどころのない魚じゃ。影の動きがゆっくりでも油断は禁物じゃぞ。", recommendedSpot: "deep", sizeHint: "中と大が中心じゃ。特大は深い海で静かに狙うのが近道じゃな。" },
+    { name: "カミナリウオ", points: 175, shadow: 88, speed: 78, biteWindow: 0.44, color: "#ffe05c", image: "assets/fish/025.png", rarity: "LEGENDARY", catchWeight: 2.4, catchDifficulty: 3, description: "びりっとした気配を残して泳ぐ珍魚じゃ。見つけたら、浮きが沈む瞬間に迷わず合わせるのじゃ。", recommendedSpot: "abyss", sizeHint: "中以上が多いが、特大はかなり手強い。幻の海溝で勝負じゃ。" },
+    { name: "ユメミノサカナ", points: 260, shadow: 96, speed: 60, biteWindow: 0.4, color: "#cf8cff", image: "assets/fish/026.png", rarity: "MYTHIC", catchWeight: 1.4, catchDifficulty: 4, description: "夢の中から泳ぎ出したような、不思議な輪郭をもつ魚じゃ。出会えた日は、釣り運がかなり高まっておるのう。", recommendedSpot: "abyss", sizeHint: "大と特大の記録が映える魚じゃ。装備を整えてじっくり挑むのじゃ。" },
   ],
 });
