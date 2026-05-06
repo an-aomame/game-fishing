@@ -1539,9 +1539,7 @@ function catchFish() {
   state.ripples.push({ x: state.bobber.x, y: state.bobber.baseY, radius: 8, alpha: 1 });
   playSfx(fish.shiny || getRarityRank(fish.type.rarity) >= getRarityRank("MYTHIC") ? "catch-ssr" : "catch");
   const totalBonus = missionReward + rewardTotal;
-  const rewardText = totalBonus ? ` / ボーナス +${totalBonus}円` : "";
-  const shinyText = fish.shiny ? "色違い! " : "";
-  setMessage(`${shinyText}${fish.size.label} ${fish.type.name}を売った! +${salePrice}円${rewardText}`, "次を投げる");
+  setMessage(`売却 +${salePrice + totalBonus}円`, "次を投げる");
 }
 
 function missFish(text) {
@@ -2119,6 +2117,16 @@ function fillRoundedRect(x, y, width, height, radius) {
   ctx.fill();
 }
 
+function setFittedFont(text, maxWidth, baseSize, minSize, weight = 900) {
+  let size = baseSize;
+  do {
+    ctx.font = `${weight} ${size}px ui-rounded, system-ui, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth || size <= minSize) break;
+    size -= 1;
+  } while (size > minSize);
+  return size;
+}
+
 function drawShowcase() {
   if (!state.showcaseFish) return;
   const style = getRarityStyle(state.showcaseFish.rarity);
@@ -2241,22 +2249,23 @@ function drawShowcase() {
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = `900 ${Math.max(18, Math.min(30, state.width * 0.06))}px ui-rounded, system-ui, sans-serif`;
+  const badgeFontSize = Math.max(14, Math.min(24, state.width * 0.045));
+  ctx.font = `900 ${badgeFontSize}px ui-rounded, system-ui, sans-serif`;
   const rarityLabel = isShiny ? "色違い" : getRarityLabel(state.showcaseFish.rarity);
-  const badgeWidth = Math.max(size * 0.92, ctx.measureText(rarityLabel).width + 28);
+  const badgeWidth = Math.max(size * 0.72, ctx.measureText(rarityLabel).width + 24);
   ctx.fillStyle = isShiny ? "#f4b900" : style.color;
-  fillRoundedRect(state.width * 0.5 - badgeWidth * 0.5, y + size * 0.66, badgeWidth, size * 0.3, 8);
+  fillRoundedRect(state.width * 0.5 - badgeWidth * 0.5, y + size * 0.66, badgeWidth, Math.max(28, size * 0.24), 8);
   ctx.fillStyle = "#fff";
-  ctx.fillText(rarityLabel, state.width * 0.5, y + size * 0.81);
+  ctx.fillText(rarityLabel, state.width * 0.5, y + size * 0.78);
 
   ctx.fillStyle = "#102033";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `900 ${Math.max(30, Math.min(50, state.width * 0.095))}px ui-rounded, system-ui, sans-serif`;
-  ctx.fillText(isStar ? "FEVER TIME" : `${isShiny ? "色違い " : ""}${sizeInfo.label} ${state.showcaseFish.name}`, state.width * 0.5, y + size * 1.18);
-  ctx.font = `800 ${Math.max(18, Math.min(28, state.width * 0.052))}px ui-rounded, system-ui, sans-serif`;
+  const titleText = isStar ? "FEVER TIME" : state.showcaseFish.name;
+  setFittedFont(titleText, state.width * 0.86, Math.max(34, Math.min(54, state.width * 0.1)), 28, 900);
+  ctx.fillText(titleText, state.width * 0.5, y + size * 1.16);
+  const detailText = isStar ? `${feverSettings.duration}秒 フィーバー` : `${isShiny ? "色違い / " : ""}${sizeInfo.label}`;
+  setFittedFont(detailText, state.width * 0.78, Math.max(18, Math.min(26, state.width * 0.048)), 15, 800);
   ctx.fillStyle = "rgba(16,32,51,0.72)";
-  ctx.fillText(isStar ? `${feverSettings.duration}秒 レア魚・大物チャンス!` : `+${state.showcasePrice || state.showcaseFish.points}円`, state.width * 0.5, y + size * 1.48);
+  ctx.fillText(detailText, state.width * 0.5, y + size * 1.43);
   ctx.restore();
 }
 
