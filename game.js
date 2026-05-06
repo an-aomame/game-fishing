@@ -1684,6 +1684,7 @@ function draw() {
   drawSky();
   drawWater();
   drawRod();
+  drawFishingLine();
   drawForeground();
   drawBiteCue();
   drawFeverOverlay();
@@ -2261,16 +2262,7 @@ function drawShowcase() {
 
 function drawBobber() {
   if (!state.bobber.visible) return;
-  const depth = Math.max(0, Math.min(1, (state.bobber.baseY - state.waterLine) / (state.height - state.waterLine)));
-  const bobberScale = 0.58 + depth * 0.5;
-  const bobberTop = state.bobber.sunk ? state.bobber.y - 5 * bobberScale : state.bobber.y - 18 * bobberScale;
-
-  ctx.strokeStyle = "rgba(16,32,51,0.64)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(state.width * 0.5 + Math.min(110, state.width * 0.16), state.height - 66);
-  ctx.lineTo(state.bobber.x, bobberTop);
-  ctx.stroke();
+  const { bobberScale, bobberTop } = getBobberMetrics();
 
   ctx.fillStyle = "#f8f6e7";
   ctx.beginPath();
@@ -2300,14 +2292,53 @@ function drawRipples() {
   });
 }
 
-function drawRod() {
-  const rod = getEquippedRod();
+function getRodGeometry() {
   const gripX = state.width * 0.5;
   const gripY = state.height + 58;
-  const tipX = state.bobber.visible ? state.bobber.x : state.width * 0.5 + state.width * 0.05;
-  const tipY = state.bobber.visible ? state.bobber.y - 12 : state.waterLine + state.height * 0.08;
-  const controlX = state.width * 0.5 + Math.min(120, state.width * 0.18);
+  const tipX = state.width * 0.5 + Math.min(168, state.width * 0.24);
+  const tipY = state.waterLine - Math.max(26, state.height * 0.08);
+  const controlX = state.width * 0.5 + Math.min(132, state.width * 0.19);
   const controlY = state.height * 0.58;
+
+  return { gripX, gripY, tipX, tipY, controlX, controlY };
+}
+
+function getBobberMetrics() {
+  const depth = Math.max(0, Math.min(1, (state.bobber.baseY - state.waterLine) / (state.height - state.waterLine)));
+  const bobberScale = 0.58 + depth * 0.5;
+  const bobberTop = state.bobber.sunk ? state.bobber.y - 5 * bobberScale : state.bobber.y - 18 * bobberScale;
+
+  return { bobberScale, bobberTop };
+}
+
+function drawFishingLine() {
+  if (!state.bobber.visible) return;
+  const { tipX, tipY } = getRodGeometry();
+  const { bobberTop } = getBobberMetrics();
+  const controlX = tipX + (state.bobber.x - tipX) * 0.34;
+  const controlY = Math.min(bobberTop - 12, tipY + Math.abs(state.bobber.x - tipX) * 0.22 + 18);
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(244, 251, 255, 0.76)";
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.quadraticCurveTo(controlX, controlY, state.bobber.x, bobberTop);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(16, 32, 51, 0.32)";
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.quadraticCurveTo(controlX, controlY, state.bobber.x, bobberTop);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawRod() {
+  const rod = getEquippedRod();
+  const { gripX, gripY, tipX, tipY, controlX, controlY } = getRodGeometry();
   const rodWidth = Math.max(7, state.width * 0.014) + rod.power * 0.8;
 
   ctx.lineCap = "round";
