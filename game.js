@@ -119,10 +119,12 @@ const fishShadowImage = new Image();
 fishShadowImage.src = `assets/gyoei.png?v=${GAME_VERSION}`;
 
 fishTypes.forEach((type) => {
-  if (!type.image) return;
-  const image = new Image();
-  image.src = type.image;
-  fishImages.set(type.image, image);
+  [type.image, type.shinyImage].forEach((src) => {
+    if (!src) return;
+    const image = new Image();
+    image.src = src;
+    fishImages.set(src, image);
+  });
 });
 
 function getRarityRank(rarity) {
@@ -203,11 +205,24 @@ function openDexDetail(type) {
     const image = document.createElement("img");
     image.src = type.image;
     image.alt = type.name;
-    dexDetailArt.append(image);
+    if (entry.shiny > 0 && type.shinyImage) {
+      const normalFigure = createDexVariantFigure(image, "通常");
+      const shinyImage = document.createElement("img");
+      shinyImage.src = type.shinyImage;
+      shinyImage.alt = `${type.name} 色違い`;
+      const shinyFigure = createDexVariantFigure(shinyImage, "色違い");
+      shinyFigure.classList.add("is-shiny");
+      dexDetailArt.classList.add("has-variants");
+      dexDetailArt.append(normalFigure, shinyFigure);
+    } else {
+      dexDetailArt.classList.remove("has-variants");
+      dexDetailArt.append(image);
+    }
   } else {
     const shadow = document.createElement("span");
     shadow.className = "dex-shadow";
     shadow.style.width = `${Math.min(82, Math.max(46, type.shadow))}%`;
+    dexDetailArt.classList.remove("has-variants");
     dexDetailArt.append(shadow);
   }
 
@@ -236,6 +251,15 @@ function openDexDetail(type) {
   );
 
   dexDetail.classList.remove("is-hidden");
+}
+
+function createDexVariantFigure(image, label) {
+  const figure = document.createElement("figure");
+  figure.className = "dex-variant";
+  const caption = document.createElement("figcaption");
+  caption.textContent = label;
+  figure.append(image, caption);
+  return figure;
 }
 
 function loadMusicEnabled() {
@@ -2014,13 +2038,14 @@ function drawFishBody(type, x, y, size, direction, shiny = false) {
     return;
   }
 
-  const image = type.image ? fishImages.get(type.image) : null;
+  const imageSrc = shiny && type.shinyImage ? type.shinyImage : type.image;
+  const image = imageSrc ? fishImages.get(imageSrc) : null;
   if (image?.complete && image.naturalWidth > 0) {
     const imageSize = size * 2.28;
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(direction, 1);
-    if (shiny) {
+    if (shiny && !type.shinyImage) {
       ctx.filter = "hue-rotate(135deg) saturate(1.8) brightness(1.22)";
     }
     ctx.drawImage(image, -imageSize * 0.5, -imageSize * 0.5, imageSize, imageSize);
